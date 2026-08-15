@@ -34,6 +34,7 @@ INSTALLED_APPS = [
 
     # Business apps
     "core",
+    "authentication",
     "dashboard",
     "products",
     "customers",
