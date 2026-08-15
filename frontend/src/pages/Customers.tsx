@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import {
+  CreditCard,
   Edit,
+  Eye,
+  IndianRupee,
   MapPin,
   Plus,
   Search,
@@ -68,6 +71,34 @@ interface Customer {
 
   updated_at: string;
   updated_by_name: string | null;
+}
+
+interface OutstandingInvoice {
+  sale_id: number;
+  invoice_number: string;
+  sale_date: string;
+  total_amount: string | number;
+  paid_amount: string | number;
+  outstanding_amount: string | number;
+  payment_status: "PAID" | "PARTIALLY_PAID" | "UNPAID";
+}
+
+interface CustomerOutstanding {
+  customer: {
+    id: number;
+    code: string;
+    shop_name: string;
+    mobile: string;
+    status: Status;
+  };
+  summary: {
+    total_sales: string | number;
+    total_paid: string | number;
+    invoice_outstanding: string | number;
+    opening_balance: string | number;
+    total_outstanding: string | number;
+  };
+  invoices: OutstandingInvoice[];
 }
 
 interface RouteForm {
@@ -157,6 +188,26 @@ export default function Customers() {
 
   const [customerForm, setCustomerForm] =
     useState<CustomerForm>(emptyCustomerForm);
+
+
+  // ----------------------------------------------------------
+  // Customer outstanding state
+  // ----------------------------------------------------------
+
+  const [showOutstandingModal, setShowOutstandingModal] =
+    useState(false);
+
+  const [selectedCustomer, setSelectedCustomer] =
+    useState<Customer | null>(null);
+
+  const [customerOutstanding, setCustomerOutstanding] =
+    useState<CustomerOutstanding | null>(null);
+
+  const [outstandingLoading, setOutstandingLoading] =
+    useState(false);
+
+  const [outstandingError, setOutstandingError] =
+    useState("");
 
 
   // ----------------------------------------------------------
@@ -642,6 +693,46 @@ export default function Customers() {
     }
   };
 
+
+  // ==========================================================
+  // CUSTOMER OUTSTANDING
+  // ==========================================================
+
+  const openCustomerOutstanding = async (
+    customer: Customer
+  ) => {
+    setSelectedCustomer(customer);
+    setCustomerOutstanding(null);
+    setOutstandingError("");
+    setShowOutstandingModal(true);
+    setOutstandingLoading(true);
+
+    try {
+      const response = await api.get(
+        `/customers/${customer.id}/outstanding/`
+      );
+
+      setCustomerOutstanding(response.data);
+    } catch (error) {
+      console.error(error);
+      setOutstandingError(
+        "Unable to load customer outstanding details."
+      );
+    } finally {
+      setOutstandingLoading(false);
+    }
+  };
+
+  const closeCustomerOutstanding = () => {
+    if (outstandingLoading) {
+      return;
+    }
+
+    setShowOutstandingModal(false);
+    setSelectedCustomer(null);
+    setCustomerOutstanding(null);
+    setOutstandingError("");
+  };
 
   // ==========================================================
   // ROUTE FORM
@@ -1144,6 +1235,20 @@ export default function Customers() {
                           <td className="px-6 py-4">
 
                             <div className="flex items-center gap-2">
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openCustomerOutstanding(
+                                    customer
+                                  )
+                                }
+                                className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                                title="View outstanding"
+                              >
+                                <Eye size={15} />
+                                Outstanding
+                              </button>
 
                               <button
                                 onClick={() =>
@@ -1901,6 +2006,148 @@ export default function Customers() {
 
 
       {/* =====================================================
+          CUSTOMER OUTSTANDING MODAL
+      ====================================================== */}
+
+      {showOutstandingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+              <div>
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+                  <CreditCard size={20} />
+                  Customer Outstanding
+                </h2>
+                {selectedCustomer && (
+                  <p className="mt-1 text-sm text-slate-500">
+                    {selectedCustomer.shop_name} · {selectedCustomer.code}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={closeCustomerOutstanding}
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
+              >
+                <X size={19} />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-6">
+              {outstandingLoading ? (
+                <div className="flex h-64 items-center justify-center text-sm text-slate-500">
+                  Loading customer outstanding...
+                </div>
+              ) : outstandingError ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {outstandingError}
+                </div>
+              ) : customerOutstanding ? (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                    <FinancialCard
+                      label="Total Sales"
+                      value={customerOutstanding.summary.total_sales}
+                    />
+                    <FinancialCard
+                      label="Total Paid"
+                      value={customerOutstanding.summary.total_paid}
+                    />
+                    <FinancialCard
+                      label="Invoice Outstanding"
+                      value={customerOutstanding.summary.invoice_outstanding}
+                    />
+                    <FinancialCard
+                      label="Opening Balance"
+                      value={customerOutstanding.summary.opening_balance}
+                    />
+                    <FinancialCard
+                      label="Total Outstanding"
+                      value={customerOutstanding.summary.total_outstanding}
+                      emphasis
+                    />
+                  </div>
+
+                  <section className="overflow-hidden rounded-xl border border-slate-200">
+                    <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                      <div>
+                        <h3 className="font-semibold text-slate-900">
+                          Invoice Outstanding
+                        </h3>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Completed invoices and their payment status.
+                        </p>
+                      </div>
+                      <span className="text-sm text-slate-400">
+                        {customerOutstanding.invoices.length} invoices
+                      </span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[850px] text-left text-sm">
+                        <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                          <tr>
+                            <th className="px-5 py-3">Invoice</th>
+                            <th className="px-5 py-3">Date</th>
+                            <th className="px-5 py-3 text-right">Total</th>
+                            <th className="px-5 py-3 text-right">Paid</th>
+                            <th className="px-5 py-3 text-right">Outstanding</th>
+                            <th className="px-5 py-3">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {customerOutstanding.invoices.map(invoice => (
+                            <tr key={invoice.sale_id} className="hover:bg-slate-50">
+                              <td className="px-5 py-4 font-medium text-slate-900">
+                                {invoice.invoice_number}
+                              </td>
+                              <td className="px-5 py-4 text-slate-500">
+                                {formatDate(invoice.sale_date)}
+                              </td>
+                              <td className="px-5 py-4 text-right">
+                                {formatCurrency(invoice.total_amount)}
+                              </td>
+                              <td className="px-5 py-4 text-right text-emerald-700">
+                                {formatCurrency(invoice.paid_amount)}
+                              </td>
+                              <td className="px-5 py-4 text-right font-semibold text-slate-900">
+                                {formatCurrency(invoice.outstanding_amount)}
+                              </td>
+                              <td className="px-5 py-4">
+                                <PaymentStatusBadge status={invoice.payment_status} />
+                              </td>
+                            </tr>
+                          ))}
+
+                          {customerOutstanding.invoices.length === 0 && (
+                            <tr>
+                              <td colSpan={6} className="px-5 py-10 text-center text-slate-400">
+                                No completed invoices found for this customer.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="flex justify-end border-t border-slate-200 px-6 py-4">
+              <button
+                type="button"
+                onClick={closeCustomerOutstanding}
+                className="rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================
           ROUTE MODAL
       ====================================================== */}
 
@@ -2095,6 +2342,96 @@ export default function Customers() {
 // ============================================================
 // REUSABLE FORM FIELD
 // ============================================================
+
+function formatCurrency(value: string | number) {
+  return `₹${Number(value).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function formatDate(value: string) {
+  if (!value) {
+    return "-";
+  }
+
+  const [year, month, day] = value.split("-");
+
+  if (!year || !month || !day) {
+    return value;
+  }
+
+  return `${day}-${month}-${year}`;
+}
+
+function PaymentStatusBadge({
+  status,
+}: {
+  status: "PAID" | "PARTIALLY_PAID" | "UNPAID";
+}) {
+  const config = {
+    PAID: {
+      label: "Paid",
+      className: "bg-emerald-50 text-emerald-700",
+    },
+    PARTIALLY_PAID: {
+      label: "Partially Paid",
+      className: "bg-amber-50 text-amber-700",
+    },
+    UNPAID: {
+      label: "Unpaid",
+      className: "bg-red-50 text-red-700",
+    },
+  }[status];
+
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${config.className}`}>
+      {config.label}
+    </span>
+  );
+}
+
+function FinancialCard({
+  label,
+  value,
+  emphasis = false,
+}: {
+  label: string;
+  value: string | number;
+  emphasis?: boolean;
+}) {
+  return (
+    <div
+      className={
+        emphasis
+          ? "rounded-xl border border-slate-900 bg-slate-900 p-4 text-white"
+          : "rounded-xl border border-slate-200 bg-white p-4"
+      }
+    >
+      <div className="flex items-center gap-2">
+        <IndianRupee size={15} />
+        <p
+          className={
+            emphasis
+              ? "text-xs font-medium text-slate-300"
+              : "text-xs font-medium text-slate-500"
+          }
+        >
+          {label}
+        </p>
+      </div>
+      <p
+        className={
+          emphasis
+            ? "mt-2 text-xl font-bold text-white"
+            : "mt-2 text-xl font-bold text-slate-900"
+        }
+      >
+        {formatCurrency(value)}
+      </p>
+    </div>
+  );
+}
 
 const inputClass =
   "w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100";

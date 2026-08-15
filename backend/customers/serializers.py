@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import serializers
 
 from .models import Customer, Route
@@ -267,3 +269,73 @@ class CustomerSerializer(serializers.ModelSerializer):
             )
 
         return value
+
+class CustomerOutstandingInvoiceSerializer(
+    serializers.Serializer
+):
+
+    sale_id = serializers.IntegerField()
+
+    invoice_number = serializers.CharField()
+
+    sale_date = serializers.DateField()
+
+    total_amount = serializers.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+    )
+
+    paid_amount = serializers.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+    )
+
+    outstanding_amount = serializers.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+    )
+
+    payment_status = serializers.CharField()
+
+
+class CustomerOutstandingSummarySerializer(
+    serializers.Serializer
+):
+
+    total_sales = serializers.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+    )
+
+    total_paid = serializers.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+    )
+
+    invoice_outstanding = serializers.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+    )
+
+    opening_balance = serializers.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+    )
+
+    total_outstanding = serializers.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+    )
+
+
+class CustomerOutstandingSerializer(
+    serializers.Serializer
+):
+
+    customer = serializers.DictField()
+
+    summary = CustomerOutstandingSummarySerializer()
+
+    invoices = CustomerOutstandingInvoiceSerializer(
+        many=True,
+    )

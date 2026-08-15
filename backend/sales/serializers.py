@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.db.models import Sum
 from rest_framework import serializers
 
 from .models import Sale, SaleItem
@@ -127,6 +128,16 @@ class SaleSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
+    # -------------------------------------------------
+    # PAYMENT / RECEIVABLE INFORMATION
+    # -------------------------------------------------
+
+    paid_amount = serializers.SerializerMethodField()
+
+    outstanding_amount = serializers.SerializerMethodField()
+
+    payment_status = serializers.SerializerMethodField()
+
     created_by_name = serializers.SerializerMethodField()
     updated_by_name = serializers.SerializerMethodField()
 
@@ -153,6 +164,11 @@ class SaleSerializer(serializers.ModelSerializer):
             "tax",
             "total_amount",
 
+            # Payment information
+            "paid_amount",
+            "outstanding_amount",
+            "payment_status",
+
             "notes",
 
             "items",
@@ -175,6 +191,11 @@ class SaleSerializer(serializers.ModelSerializer):
             "subtotal",
             "total_amount",
 
+            # Payment information is calculated
+            "paid_amount",
+            "outstanding_amount",
+            "payment_status",
+
             "items",
 
             "created_at",
@@ -183,6 +204,58 @@ class SaleSerializer(serializers.ModelSerializer):
             "updated_at",
             "updated_by_name",
         ]
+
+    # -------------------------------------------------
+    # PAYMENT CALCULATIONS
+    # -------------------------------------------------
+
+    def get_paid_amount(self, obj):
+
+        total = (
+            obj.payment_allocations
+            .filter(
+                payment__status="COMPLETED",
+            )
+            .aggregate(
+                total=Sum("amount")
+            )["total"]
+        )
+
+        return total or Decimal("0.00")
+
+    def get_outstanding_amount(self, obj):
+
+        paid_amount = self.get_paid_amount(obj)
+
+        outstanding = (
+            obj.total_amount - paid_amount
+        )
+
+        # Never expose a negative outstanding amount.
+        if outstanding < Decimal("0.00"):
+            outstanding = Decimal("0.00")
+
+        return outstanding
+
+    def get_payment_status(self, obj):
+
+        paid_amount = self.get_paid_amount(obj)
+
+        total_amount = obj.total_amount
+
+        if paid_amount <= Decimal("0.00"):
+
+            return "UNPAID"
+
+        if paid_amount < total_amount:
+
+            return "PARTIALLY_PAID"
+
+        return "PAID"
+
+    # -------------------------------------------------
+    # USER INFORMATION
+    # -------------------------------------------------
 
     def get_created_by_name(self, obj):
 
@@ -204,11 +277,16 @@ class SaleSerializer(serializers.ModelSerializer):
             or obj.updated_by.username
         )
 
+    # -------------------------------------------------
+    # VALIDATION
+    # -------------------------------------------------
+
     def validate_invoice_number(self, value):
 
         value = value.strip()
 
         if not value:
+
             raise serializers.ValidationError(
                 "Invoice number is required."
             )
@@ -218,6 +296,7 @@ class SaleSerializer(serializers.ModelSerializer):
     def validate_discount(self, value):
 
         if value < Decimal("0.00"):
+
             raise serializers.ValidationError(
                 "Discount cannot be negative."
             )
@@ -227,6 +306,7 @@ class SaleSerializer(serializers.ModelSerializer):
     def validate_tax(self, value):
 
         if value < Decimal("0.00"):
+
             raise serializers.ValidationError(
                 "Tax cannot be negative."
             )
@@ -246,6 +326,7 @@ class SaleSerializer(serializers.ModelSerializer):
         )
 
         if discount < Decimal("0.00"):
+
             raise serializers.ValidationError(
                 {
                     "discount":
@@ -254,6 +335,7 @@ class SaleSerializer(serializers.ModelSerializer):
             )
 
         if tax < Decimal("0.00"):
+
             raise serializers.ValidationError(
                 {
                     "tax":
