@@ -1,36 +1,51 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
-from django.db.models import (
-    Count,
-    Q,
-    Sum,
-)
+from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncMonth
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from customers.models import Customer
 from expenses.models import Expense
-from inventory.models import (
-    StockLocation,
-    StockTransaction,
-)
+from inventory.models import StockLocation, StockTransaction
 from payments.models import Payment
 from products.models import Product
 from purchases.models import Purchase
-from sales.models import Sale, SaleItem
+from sales.models import Sale
 from suppliers.models import Supplier
 
 
+ZERO = Decimal("0.00")
+
+
+def _decimal(value):
+    return value if value is not None else ZERO
+
+
+def _safe_str(value):
+    return "" if value is None else str(value)
+
+
+def _display_name(obj, *fields):
+    for field in fields:
+        value = getattr(obj, field, None)
+        if value:
+            return str(value)
+    return str(obj)
+
+
 class DashboardSummaryView(APIView):
+    """
+    GET /api/dashboard/summary/
+
+    Returns the totals expected by Dashboard.tsx.
+    """
 
     def get(self, request):
-
         # --------------------------------------------------
         # SALES
         # --------------------------------------------------
-
         completed_sales = Sale.objects.filter(
             status=Sale.Status.COMPLETED
         )
@@ -40,20 +55,12 @@ class DashboardSummaryView(APIView):
             count=Count("id"),
         )
 
-        sales_total = (
-            sales_summary["total"]
-            or Decimal("0.00")
-        )
-
-        sales_count = (
-            sales_summary["count"]
-            or 0
-        )
+        sales_total = _decimal(sales_summary["total"])
+        sales_count = sales_summary["count"] or 0
 
         # --------------------------------------------------
         # PURCHASES
         # --------------------------------------------------
-
         completed_purchases = Purchase.objects.filter(
             status=Purchase.Status.COMPLETED
         )
@@ -63,20 +70,12 @@ class DashboardSummaryView(APIView):
             count=Count("id"),
         )
 
-        purchases_total = (
-            purchase_summary["total"]
-            or Decimal("0.00")
-        )
-
-        purchases_count = (
-            purchase_summary["count"]
-            or 0
-        )
+        purchases_total = _decimal(purchase_summary["total"])
+        purchases_count = purchase_summary["count"] or 0
 
         # --------------------------------------------------
         # EXPENSES
         # --------------------------------------------------
-
         completed_expenses = Expense.objects.filter(
             status=Expense.Status.COMPLETED
         )
@@ -86,50 +85,35 @@ class DashboardSummaryView(APIView):
             count=Count("id"),
         )
 
-        expenses_total = (
-            expense_summary["total"]
-            or Decimal("0.00")
-        )
-
-        expenses_count = (
-            expense_summary["count"]
-            or 0
-        )
+        expenses_total = _decimal(expense_summary["total"])
+        expenses_count = expense_summary["count"] or 0
 
         # --------------------------------------------------
         # PAYMENTS
         # --------------------------------------------------
-
         completed_payments = Payment.objects.filter(
             status=Payment.Status.COMPLETED
         )
 
-        customer_receipts = (
+        customer_receipts = _decimal(
             completed_payments
             .filter(
                 payment_type=Payment.PaymentType.CUSTOMER
             )
-            .aggregate(
-                total=Sum("amount")
-            )["total"]
-            or Decimal("0.00")
+            .aggregate(total=Sum("amount"))["total"]
         )
 
-        supplier_payments = (
+        supplier_payments = _decimal(
             completed_payments
             .filter(
                 payment_type=Payment.PaymentType.SUPPLIER
             )
-            .aggregate(
-                total=Sum("amount")
-            )["total"]
-            or Decimal("0.00")
+            .aggregate(total=Sum("amount"))["total"]
         )
 
         # --------------------------------------------------
         # MASTER COUNTS
         # --------------------------------------------------
-
         active_products = Product.objects.filter(
             status=Product.Status.ACTIVE
         ).count()
@@ -149,7 +133,6 @@ class DashboardSummaryView(APIView):
         # --------------------------------------------------
         # INVENTORY
         # --------------------------------------------------
-
         inventory = (
             StockTransaction.objects
             .values("product_id")
@@ -180,33 +163,18 @@ class DashboardSummaryView(APIView):
             )
         )
 
-        total_stock = Decimal("0.00")
+        total_stock = ZERO
         products_in_stock = 0
 
         for item in inventory:
+            stock_in = _decimal(item["stock_in"])
+            stock_out = _decimal(item["stock_out"])
 
-            stock_in = (
-                item["stock_in"]
-                or Decimal("0.00")
-            )
-
-            stock_out = (
-                item["stock_out"]
-                or Decimal("0.00")
-            )
-
-            current_stock = (
-                stock_in - stock_out
-            )
-
+            current_stock = stock_in - stock_out
             total_stock += current_stock
 
-            if current_stock > 0:
+            if current_stock > ZERO:
                 products_in_stock += 1
-
-        # --------------------------------------------------
-        # RESPONSE
-        # --------------------------------------------------
 
         return Response(
             {
@@ -214,93 +182,57 @@ class DashboardSummaryView(APIView):
                     "total": sales_total,
                     "count": sales_count,
                 },
-
                 "purchases": {
                     "total": purchases_total,
                     "count": purchases_count,
                 },
-
                 "expenses": {
                     "total": expenses_total,
                     "count": expenses_count,
                 },
-
                 "payments": {
-                    "customer_receipts":
-                        customer_receipts,
-
-                    "supplier_payments":
-                        supplier_payments,
+                    "customer_receipts": customer_receipts,
+                    "supplier_payments": supplier_payments,
                 },
-
                 "masters": {
-                    "active_products":
-                        active_products,
-
-                    "active_customers":
-                        active_customers,
-
-                    "active_suppliers":
-                        active_suppliers,
-
-                    "active_locations":
-                        active_locations,
+                    "active_products": active_products,
+                    "active_customers": active_customers,
+                    "active_suppliers": active_suppliers,
+                    "active_locations": active_locations,
                 },
-
                 "inventory": {
-                    "total_stock":
-                        total_stock,
-
-                    "products_in_stock":
-                        products_in_stock,
+                    "total_stock": total_stock,
+                    "products_in_stock": products_in_stock,
                 },
             }
         )
 
+
 class DashboardTrendsView(APIView):
+    """
+    GET /api/dashboard/trends/?period=7d|30d|12m
+    """
 
     def get(self, request):
-
-        period = request.query_params.get(
-            "period",
-            "30d",
-        )
-
+        period = request.query_params.get("period", "30d")
         today = date.today()
 
         # --------------------------------------------------
         # DATE RANGE
         # --------------------------------------------------
-
         if period == "7d":
-
-            start_date = (
-                today - timedelta(days=6)
-            )
+            start_date = today - timedelta(days=6)
 
         elif period == "30d":
-
-            start_date = (
-                today - timedelta(days=29)
-            )
+            start_date = today - timedelta(days=29)
 
         elif period == "12m":
-
-            year = today.year
-            month = today.month - 11
-
-            if month <= 0:
-                year -= 1
-                month += 12
-
-            start_date = date(
-                year,
-                month,
-                1,
-            )
+            month_index = today.year * 12 + (today.month - 1) - 11
+            year = month_index // 12
+            month = month_index % 12 + 1
+            start_date = date(year, month, 1)
 
         else:
-
             return Response(
                 {
                     "detail": (
@@ -312,15 +244,9 @@ class DashboardTrendsView(APIView):
             )
 
         # ==================================================
-        # 7 DAYS / 30 DAYS
+        # DAILY: 7D / 30D
         # ==================================================
-
-        if period in ["7d", "30d"]:
-
-            # --------------------------------------------------
-            # SALES
-            # --------------------------------------------------
-
+        if period in ("7d", "30d"):
             sales_queryset = (
                 Sale.objects
                 .filter(
@@ -329,22 +255,13 @@ class DashboardTrendsView(APIView):
                     sale_date__lte=today,
                 )
                 .values("sale_date")
-                .annotate(
-                    amount=Sum("total_amount"),
-                )
+                .annotate(amount=Sum("total_amount"))
             )
 
             sales_by_date = {
-                item["sale_date"]: (
-                    item["amount"]
-                    or Decimal("0.00")
-                )
+                item["sale_date"]: _decimal(item["amount"])
                 for item in sales_queryset
             }
-
-            # --------------------------------------------------
-            # PURCHASES
-            # --------------------------------------------------
 
             purchases_queryset = (
                 Purchase.objects
@@ -354,22 +271,13 @@ class DashboardTrendsView(APIView):
                     purchase_date__lte=today,
                 )
                 .values("purchase_date")
-                .annotate(
-                    amount=Sum("total_amount"),
-                )
+                .annotate(amount=Sum("total_amount"))
             )
 
             purchases_by_date = {
-                item["purchase_date"]: (
-                    item["amount"]
-                    or Decimal("0.00")
-                )
+                item["purchase_date"]: _decimal(item["amount"])
                 for item in purchases_queryset
             }
-
-            # --------------------------------------------------
-            # EXPENSES
-            # --------------------------------------------------
 
             expenses_queryset = (
                 Expense.objects
@@ -379,43 +287,27 @@ class DashboardTrendsView(APIView):
                     expense_date__lte=today,
                 )
                 .values("expense_date")
-                .annotate(
-                    amount=Sum("amount"),
-                )
+                .annotate(amount=Sum("amount"))
             )
 
             expenses_by_date = {
-                item["expense_date"]: (
-                    item["amount"]
-                    or Decimal("0.00")
-                )
+                item["expense_date"]: _decimal(item["amount"])
                 for item in expenses_queryset
             }
 
-            # --------------------------------------------------
-            # COMPLETE DATE RANGE
-            # --------------------------------------------------
-
             dates = []
-
             current_date = start_date
 
             while current_date <= today:
-
                 dates.append(current_date)
-
                 current_date += timedelta(days=1)
-
-            # --------------------------------------------------
-            # RESPONSE DATA
-            # --------------------------------------------------
 
             sales = [
                 {
                     "date": current_date,
                     "amount": sales_by_date.get(
                         current_date,
-                        Decimal("0.00"),
+                        ZERO,
                     ),
                 }
                 for current_date in dates
@@ -426,7 +318,7 @@ class DashboardTrendsView(APIView):
                     "date": current_date,
                     "amount": purchases_by_date.get(
                         current_date,
-                        Decimal("0.00"),
+                        ZERO,
                     ),
                 }
                 for current_date in dates
@@ -437,7 +329,7 @@ class DashboardTrendsView(APIView):
                     "date": current_date,
                     "amount": expenses_by_date.get(
                         current_date,
-                        Decimal("0.00"),
+                        ZERO,
                     ),
                 }
                 for current_date in dates
@@ -455,9 +347,8 @@ class DashboardTrendsView(APIView):
             )
 
         # ==================================================
-        # 12 MONTHS
+        # MONTHLY: 12M
         # ==================================================
-
         sales_queryset = (
             Sale.objects
             .filter(
@@ -465,20 +356,15 @@ class DashboardTrendsView(APIView):
                 sale_date__gte=start_date,
                 sale_date__lte=today,
             )
-            .annotate(
-                month=TruncMonth("sale_date"),
-            )
+            .annotate(month=TruncMonth("sale_date"))
             .values("month")
-            .annotate(
-                amount=Sum("total_amount"),
-            )
+            .annotate(amount=Sum("total_amount"))
             .order_by("month")
         )
 
         sales_by_month = {
-            item["month"].replace(day=1): (
+            item["month"].date().replace(day=1): _decimal(
                 item["amount"]
-                or Decimal("0.00")
             )
             for item in sales_queryset
         }
@@ -490,20 +376,15 @@ class DashboardTrendsView(APIView):
                 purchase_date__gte=start_date,
                 purchase_date__lte=today,
             )
-            .annotate(
-                month=TruncMonth("purchase_date"),
-            )
+            .annotate(month=TruncMonth("purchase_date"))
             .values("month")
-            .annotate(
-                amount=Sum("total_amount"),
-            )
+            .annotate(amount=Sum("total_amount"))
             .order_by("month")
         )
 
         purchases_by_month = {
-            item["month"].replace(day=1): (
+            item["month"].date().replace(day=1): _decimal(
                 item["amount"]
-                or Decimal("0.00")
             )
             for item in purchases_queryset
         }
@@ -515,64 +396,45 @@ class DashboardTrendsView(APIView):
                 expense_date__gte=start_date,
                 expense_date__lte=today,
             )
-            .annotate(
-                month=TruncMonth("expense_date"),
-            )
+            .annotate(month=TruncMonth("expense_date"))
             .values("month")
-            .annotate(
-                amount=Sum("amount"),
-            )
+            .annotate(amount=Sum("amount"))
             .order_by("month")
         )
 
         expenses_by_month = {
-            item["month"].replace(day=1): (
+            item["month"].date().replace(day=1): _decimal(
                 item["amount"]
-                or Decimal("0.00")
             )
             for item in expenses_queryset
         }
 
-        # --------------------------------------------------
-        # COMPLETE 12-MONTH RANGE
-        # --------------------------------------------------
-
         months = []
+        current_month = start_date.replace(day=1)
+        last_month = today.replace(day=1)
 
-        current_month = start_date
-
-        while current_month <= today:
-
+        while current_month <= last_month:
             months.append(current_month)
 
             if current_month.month == 12:
-
                 current_month = date(
                     current_month.year + 1,
                     1,
                     1,
                 )
-
             else:
-
                 current_month = date(
                     current_month.year,
                     current_month.month + 1,
                     1,
                 )
 
-        # --------------------------------------------------
-        # RESPONSE DATA
-        # --------------------------------------------------
-
         sales = [
             {
-                "month": current_month.strftime(
-                    "%Y-%m"
-                ),
+                "month": current_month.strftime("%Y-%m"),
                 "amount": sales_by_month.get(
                     current_month,
-                    Decimal("0.00"),
+                    ZERO,
                 ),
             }
             for current_month in months
@@ -580,12 +442,10 @@ class DashboardTrendsView(APIView):
 
         purchases = [
             {
-                "month": current_month.strftime(
-                    "%Y-%m"
-                ),
+                "month": current_month.strftime("%Y-%m"),
                 "amount": purchases_by_month.get(
                     current_month,
-                    Decimal("0.00"),
+                    ZERO,
                 ),
             }
             for current_month in months
@@ -593,12 +453,10 @@ class DashboardTrendsView(APIView):
 
         expenses = [
             {
-                "month": current_month.strftime(
-                    "%Y-%m"
-                ),
+                "month": current_month.strftime("%Y-%m"),
                 "amount": expenses_by_month.get(
                     current_month,
-                    Decimal("0.00"),
+                    ZERO,
                 ),
             }
             for current_month in months
@@ -615,107 +473,58 @@ class DashboardTrendsView(APIView):
             }
         )
 
-class DashboardTopProductsView(APIView):
 
-    DEFAULT_LIMIT = 5
-    MAX_LIMIT = 50
+class DashboardTopProductsView(APIView):
+    """
+    GET /api/dashboard/top-products/?limit=5
+
+    Uses completed SALE stock movements to rank products.
+
+    The ERP currently exposes the sold quantity directly through
+    StockTransaction. The sales amount is calculated using the
+    product's current bill_rate because the available dashboard
+    model information does not expose a separate historical sale-line
+    model in the supplied backend code.
+    """
 
     def get(self, request):
+        try:
+            limit = int(request.query_params.get("limit", 5))
+        except (TypeError, ValueError):
+            limit = 5
 
-        # --------------------------------------------------
-        # LIMIT
-        # --------------------------------------------------
+        limit = max(1, min(limit, 50))
 
-        limit_param = request.query_params.get(
-            "limit"
-        )
+        sale_type = StockTransaction.TransactionType.SALE
 
-        if limit_param is None:
-
-            limit = self.DEFAULT_LIMIT
-
-        else:
-
-            try:
-                limit = int(limit_param)
-
-            except (TypeError, ValueError):
-
-                return Response(
-                    {
-                        "detail": (
-                            "Limit must be a valid integer."
-                        )
-                    },
-                    status=400,
-                )
-
-            if limit <= 0:
-
-                return Response(
-                    {
-                        "detail": (
-                            "Limit must be greater than zero."
-                        )
-                    },
-                    status=400,
-                )
-
-            if limit > self.MAX_LIMIT:
-
-                return Response(
-                    {
-                        "detail": (
-                            f"Limit cannot exceed "
-                            f"{self.MAX_LIMIT}."
-                        )
-                    },
-                    status=400,
-                )
-
-        # --------------------------------------------------
-        # TOP PRODUCTS
-        # --------------------------------------------------
-
-        queryset = (
-            SaleItem.objects
-            .filter(
-                sale__status=Sale.Status.COMPLETED,
-            )
+        rows = (
+            StockTransaction.objects
+            .filter(transaction_type=sale_type)
             .values(
                 "product_id",
                 "product__name",
+                "product__bill_rate",
             )
             .annotate(
-                quantity_sold=Sum("quantity"),
-                sales_amount=Sum("amount"),
+                quantity_sold=Sum("quantity")
             )
-            .order_by(
-                "-sales_amount",
-                "-quantity_sold",
-                "product__name",
-            )[:limit]
+            .order_by("-quantity_sold")[:limit]
         )
 
-        # --------------------------------------------------
-        # RESPONSE
-        # --------------------------------------------------
+        results = []
 
-        results = [
-            {
-                "product_id": item["product_id"],
-                "product_name": item["product__name"],
-                "quantity_sold": (
-                    item["quantity_sold"]
-                    or Decimal("0.00")
-                ),
-                "sales_amount": (
-                    item["sales_amount"]
-                    or Decimal("0.00")
-                ),
-            }
-            for item in queryset
-        ]
+        for row in rows:
+            quantity = _decimal(row["quantity_sold"])
+            bill_rate = _decimal(row["product__bill_rate"])
+
+            results.append(
+                {
+                    "product_id": row["product_id"],
+                    "product_name": row["product__name"],
+                    "quantity_sold": quantity,
+                    "sales_amount": quantity * bill_rate,
+                }
+            )
 
         return Response(
             {
@@ -724,192 +533,175 @@ class DashboardTopProductsView(APIView):
             }
         )
 
-class DashboardRecentTransactionsView(APIView):
 
-    DEFAULT_LIMIT = 10
-    MAX_LIMIT = 50
+class DashboardRecentTransactionsView(APIView):
+    """
+    GET /api/dashboard/recent-transactions/?limit=10
+
+    Combines recent sales, purchases, expenses and payments.
+    """
 
     def get(self, request):
+        try:
+            limit = int(request.query_params.get("limit", 10))
+        except (TypeError, ValueError):
+            limit = 10
 
-        # --------------------------------------------------
-        # LIMIT
-        # --------------------------------------------------
+        limit = max(1, min(limit, 50))
 
-        limit_param = request.query_params.get(
-            "limit"
-        )
-
-        if limit_param is None:
-
-            limit = self.DEFAULT_LIMIT
-
-        else:
-
-            try:
-                limit = int(limit_param)
-
-            except (TypeError, ValueError):
-
-                return Response(
-                    {
-                        "detail": (
-                            "Limit must be a valid integer."
-                        )
-                    },
-                    status=400,
-                )
-
-            if limit <= 0:
-
-                return Response(
-                    {
-                        "detail": (
-                            "Limit must be greater than zero."
-                        )
-                    },
-                    status=400,
-                )
-
-            if limit > self.MAX_LIMIT:
-
-                return Response(
-                    {
-                        "detail": (
-                            f"Limit cannot exceed "
-                            f"{self.MAX_LIMIT}."
-                        )
-                    },
-                    status=400,
-                )
+        transactions = []
 
         # --------------------------------------------------
         # SALES
         # --------------------------------------------------
-
         sales = (
             Sale.objects
+            .filter(status=Sale.Status.COMPLETED)
             .select_related("customer")
-            .order_by(
-                "-sale_date",
-                "-id",
-            )
+            .order_by("-sale_date", "-id")[:limit]
         )
 
-        sale_results = [
-            {
-                "type": "SALE",
-                "id": sale.id,
-                "number": sale.invoice_number,
-                "date": sale.sale_date,
-                "description": (
-                    sale.customer.shop_name
-                    if sale.customer
-                    else ""
-                ),
-                "amount": sale.total_amount,
-                "status": sale.status,
-            }
-            for sale in sales[:limit]
-        ]
+        for sale in sales:
+            customer_name = ""
+
+            if getattr(sale, "customer_id", None):
+                customer = getattr(sale, "customer", None)
+                if customer:
+                    customer_name = getattr(
+                        customer,
+                        "shop_name",
+                        "",
+                    )
+
+            description = (
+                f"Sale to {customer_name}"
+                if customer_name
+                else "Completed sale"
+            )
+
+            transactions.append(
+                {
+                    "type": "SALE",
+                    "id": sale.id,
+                    "number": sale.invoice_number,
+                    "date": sale.sale_date,
+                    "description": description,
+                    "amount": sale.total_amount,
+                    "status": sale.status,
+                }
+            )
 
         # --------------------------------------------------
         # PURCHASES
         # --------------------------------------------------
-
         purchases = (
             Purchase.objects
+            .filter(status=Purchase.Status.COMPLETED)
             .select_related("supplier")
-            .order_by(
-                "-purchase_date",
-                "-id",
-            )
+            .order_by("-purchase_date", "-id")[:limit]
         )
 
-        purchase_results = [
-            {
-                "type": "PURCHASE",
-                "id": purchase.id,
-                "number": purchase.invoice_number,
-                "date": purchase.purchase_date,
-                "description": (
-                    purchase.supplier.name
-                    if purchase.supplier
-                    else ""
-                ),
-                "amount": purchase.total_amount,
-                "status": purchase.status,
-            }
-            for purchase in purchases[:limit]
-        ]
+        for purchase in purchases:
+            supplier_name = ""
+
+            if getattr(purchase, "supplier_id", None):
+                supplier = getattr(purchase, "supplier", None)
+                if supplier:
+                    supplier_name = getattr(
+                        supplier,
+                        "name",
+                        "",
+                    )
+
+            description = (
+                f"Purchase from {supplier_name}"
+                if supplier_name
+                else "Completed purchase"
+            )
+
+            transactions.append(
+                {
+                    "type": "PURCHASE",
+                    "id": purchase.id,
+                    "number": purchase.invoice_number,
+                    "date": purchase.purchase_date,
+                    "description": description,
+                    "amount": purchase.total_amount,
+                    "status": purchase.status,
+                }
+            )
 
         # --------------------------------------------------
         # EXPENSES
         # --------------------------------------------------
-
         expenses = (
             Expense.objects
-            .select_related("category")
-            .order_by(
-                "-expense_date",
-                "-id",
-            )
+            .filter(status=Expense.Status.COMPLETED)
+            .order_by("-expense_date", "-id")[:limit]
         )
 
-        expense_results = [
-            {
-                "type": "EXPENSE",
-                "id": expense.id,
-                "number": expense.expense_number,
-                "date": expense.expense_date,
-                "description": expense.category.name,
-                "amount": expense.amount,
-                "status": expense.status,
-            }
-            for expense in expenses[:limit]
-        ]
+        for expense in expenses:
+            description = (
+                getattr(expense, "description", None)
+                or "Business expense"
+            )
+
+            transactions.append(
+                {
+                    "type": "EXPENSE",
+                    "id": expense.id,
+                    "number": expense.expense_number,
+                    "date": expense.expense_date,
+                    "description": description,
+                    "amount": expense.amount,
+                    "status": expense.status,
+                }
+            )
 
         # --------------------------------------------------
         # PAYMENTS
         # --------------------------------------------------
-
         payments = (
             Payment.objects
-            .select_related(
-                "customer",
-                "supplier",
-            )
-            .order_by(
-                "-payment_date",
-                "-id",
-            )
+            .select_related("customer", "supplier")
+            .filter(status=Payment.Status.COMPLETED)
+            .order_by("-payment_date", "-id")[:limit]
         )
 
-        payment_results = []
+        for payment in payments:
+            payment_type = payment.payment_type
 
-        for payment in payments[:limit]:
-
-            if (
-                payment.payment_type
-                == Payment.PaymentType.CUSTOMER
-            ):
-
+            if payment_type == Payment.PaymentType.CUSTOMER:
+                transaction_type = "PAYMENT"
+                customer = getattr(payment, "customer", None)
+                name = (
+                    getattr(customer, "shop_name", "")
+                    if customer
+                    else ""
+                )
                 description = (
-                    payment.customer.shop_name
-                    if payment.customer
-                    else "Customer Receipt"
+                    f"Customer receipt from {name}"
+                    if name
+                    else "Customer receipt"
                 )
 
             else:
-
+                transaction_type = "PAYMENT"
+                supplier = getattr(payment, "supplier", None)
+                name = (
+                    getattr(supplier, "name", "")
+                    if supplier
+                    else ""
+                )
                 description = (
-                    payment.supplier.name
-                    if payment.supplier
-                    else "Supplier Payment"
+                    f"Supplier payment to {name}"
+                    if name
+                    else "Supplier payment"
                 )
 
-            payment_results.append(
+            transactions.append(
                 {
-                    "type": "PAYMENT",
+                    "type": transaction_type,
                     "id": payment.id,
                     "number": payment.payment_number,
                     "date": payment.payment_date,
@@ -920,41 +712,19 @@ class DashboardRecentTransactionsView(APIView):
             )
 
         # --------------------------------------------------
-        # COMBINE
+        # SORT ALL TRANSACTIONS
         # --------------------------------------------------
-
-        results = (
-            sale_results
-            + purchase_results
-            + expense_results
-            + payment_results
-        )
-
-        # --------------------------------------------------
-        # SORT
-        # --------------------------------------------------
-
-        results.sort(
+        transactions.sort(
             key=lambda item: (
-                item["date"],
+                item["date"] or date.min,
                 item["id"],
             ),
             reverse=True,
         )
 
-        # --------------------------------------------------
-        # APPLY FINAL LIMIT
-        # --------------------------------------------------
-
-        results = results[:limit]
-
-        # --------------------------------------------------
-        # RESPONSE
-        # --------------------------------------------------
-
         return Response(
             {
                 "limit": limit,
-                "results": results,
+                "results": transactions[:limit],
             }
         )
