@@ -6,6 +6,9 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
+from authentication.models import ModulePermission
+from authentication.permissions import HasModulePermission
+
 from core.models import AuditLog
 
 from .models import Expense, ExpenseCategory
@@ -16,6 +19,14 @@ from .serializers import (
 
 
 class ExpenseViewSet(viewsets.ModelViewSet):
+
+    permission_classes = [
+        HasModulePermission,
+    ]
+
+    permission_code = (
+        ModulePermission.Codes.EXPENSES
+    )
 
     queryset = (
         Expense.objects
@@ -454,6 +465,14 @@ class ExpenseViewSet(viewsets.ModelViewSet):
 class ExpenseCategoryViewSet(
     viewsets.ModelViewSet
 ):
+
+    permission_classes = [
+        HasModulePermission,
+    ]
+
+    permission_code = (
+        ModulePermission.Codes.EXPENSES
+    )
 
     queryset = (
         ExpenseCategory.objects
