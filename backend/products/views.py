@@ -1,6 +1,9 @@
 from rest_framework import filters, status, viewsets
 from rest_framework.response import Response
 
+from authentication.models import ModulePermission
+from authentication.permissions import HasModulePermission
+
 from core.models import AuditLog
 
 from .models import Product
@@ -8,6 +11,14 @@ from .serializers import ProductSerializer
 
 
 class ProductViewSet(viewsets.ModelViewSet):
+
+    permission_classes = [
+        HasModulePermission,
+    ]
+
+    permission_code = (
+        ModulePermission.Codes.PRODUCTS
+    )
 
     queryset = Product.objects.all()
 

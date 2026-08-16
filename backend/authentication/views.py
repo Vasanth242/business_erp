@@ -17,8 +17,10 @@ from rest_framework.decorators import action
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
+    IsAdminUser,
 )
 
+from .permissions import HasModulePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -1197,6 +1199,10 @@ class PasswordPolicySerializer(
 
 class UserViewSet(viewsets.ModelViewSet):
 
+    permission_code = (
+        ModulePermission.Codes.USERS
+    )
+
     queryset = (
         User.objects
         .select_related(
@@ -1207,7 +1213,7 @@ class UserViewSet(viewsets.ModelViewSet):
     )
 
     permission_classes = [
-        IsAuthenticated,
+        HasModulePermission,
     ]
 
     filter_backends = [
@@ -1580,7 +1586,7 @@ class UserViewSet(viewsets.ModelViewSet):
         )
 
 
-# ============================================================
+# =======================================================Role=====
 # ROLE VIEWSET
 # ============================================================
 
@@ -1600,7 +1606,7 @@ class RoleViewSet(viewsets.ModelViewSet):
     serializer_class = RoleSerializer
 
     permission_classes = [
-        IsAuthenticated,
+        IsAdminUser,
     ]
 
     filter_backends = [
@@ -1767,7 +1773,7 @@ class ModulePermissionViewSet(
     )
 
     permission_classes = [
-        IsAuthenticated,
+        IsAdminUser,
     ]
 
     filter_backends = [
@@ -1935,7 +1941,7 @@ class PasswordPolicyViewSet(
     )
 
     permission_classes = [
-        IsAuthenticated,
+        IsAdminUser,
     ]
 
     filter_backends = [

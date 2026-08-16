@@ -1,6 +1,9 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
+from authentication.permissions import HasModulePermission
+from authentication.models import ModulePermission
+
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncMonth
 from rest_framework.response import Response
@@ -41,6 +44,14 @@ class DashboardSummaryView(APIView):
 
     Returns the totals expected by Dashboard.tsx.
     """
+
+    permission_classes = [
+        HasModulePermission,
+    ]
+
+    permission_code = (
+        ModulePermission.Codes.DASHBOARD
+    )
 
     def get(self, request):
         # --------------------------------------------------
@@ -212,6 +223,14 @@ class DashboardTrendsView(APIView):
     """
     GET /api/dashboard/trends/?period=7d|30d|12m
     """
+
+    permission_classes = [
+        HasModulePermission,
+    ]
+
+    permission_code = (
+        ModulePermission.Codes.DASHBOARD
+    )
 
     def get(self, request):
         period = request.query_params.get("period", "30d")
@@ -487,6 +506,14 @@ class DashboardTopProductsView(APIView):
     model in the supplied backend code.
     """
 
+    permission_classes = [
+        HasModulePermission,
+    ]
+
+    permission_code = (
+        ModulePermission.Codes.DASHBOARD
+    )
+
     def get(self, request):
         try:
             limit = int(request.query_params.get("limit", 5))
@@ -540,6 +567,14 @@ class DashboardRecentTransactionsView(APIView):
 
     Combines recent sales, purchases, expenses and payments.
     """
+
+    permission_classes = [
+        HasModulePermission,
+    ]
+
+    permission_code = (
+        ModulePermission.Codes.DASHBOARD
+    )
 
     def get(self, request):
         try:

@@ -4,6 +4,9 @@ from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from authentication.models import ModulePermission
+from authentication.permissions import HasModulePermission
+
 from core.models import AuditLog
 
 from payments.models import Payment, PaymentAllocation
@@ -13,6 +16,14 @@ from .serializers import CustomerSerializer, RouteSerializer
 
 
 class RouteViewSet(viewsets.ModelViewSet):
+
+    permission_classes = [
+        HasModulePermission,
+    ]
+
+    permission_code = (
+        ModulePermission.Codes.CUSTOMERS
+    )
 
     queryset = (
         Route.objects
@@ -191,6 +202,14 @@ class RouteViewSet(viewsets.ModelViewSet):
 
 
 class CustomerViewSet(viewsets.ModelViewSet):
+
+    permission_classes = [
+        HasModulePermission,
+    ]
+
+    permission_code = (
+        ModulePermission.Codes.CUSTOMERS
+    )
 
     queryset = (
         Customer.objects
