@@ -6,6 +6,9 @@ from rest_framework import filters, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from authentication.models import ModulePermission
+from authentication.permissions import HasModulePermission
+
 from core.models import AuditLog
 from inventory.models import StockTransaction
 
@@ -17,6 +20,14 @@ from .serializers import (
 
 
 class SaleViewSet(viewsets.ModelViewSet):
+
+    permission_classes = [
+        HasModulePermission,
+    ]
+
+    permission_code = (
+        ModulePermission.Codes.SALES
+    )
 
     queryset = (
         Sale.objects
