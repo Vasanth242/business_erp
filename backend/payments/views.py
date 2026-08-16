@@ -9,6 +9,9 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
+from authentication.models import ModulePermission
+from authentication.permissions import HasModulePermission
+
 from core.models import AuditLog
 
 from .models import (
@@ -25,6 +28,14 @@ from .serializers import (
 class PaymentViewSet(
     viewsets.ModelViewSet
 ):
+
+    permission_classes = [
+    HasModulePermission,
+]
+
+    permission_code = (
+        ModulePermission.Codes.PAYMENTS
+    )
 
     queryset = (
         Payment.objects
@@ -321,6 +332,14 @@ class PaymentViewSet(
 class PaymentAllocationViewSet(
     viewsets.ModelViewSet
 ):
+
+    permission_classes = [
+    HasModulePermission,
+]
+
+    permission_code = (
+        ModulePermission.Codes.PAYMENTS
+    )
 
     queryset = (
         PaymentAllocation.objects
