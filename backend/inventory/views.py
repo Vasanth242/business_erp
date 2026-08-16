@@ -6,6 +6,9 @@ from django.db.models import Q
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 
+from authentication.models import ModulePermission
+from authentication.permissions import HasModulePermission
+
 from .models import StockLocation, StockTransaction
 from .serializers import (
     StockLocationSerializer,
@@ -15,6 +18,14 @@ from .serializers import (
 
 
 class StockLocationViewSet(viewsets.ModelViewSet):
+
+    permission_classes = [
+        HasModulePermission,
+    ]
+
+    permission_code = (
+        ModulePermission.Codes.INVENTORY
+    )
 
     queryset = (
         StockLocation.objects
@@ -69,6 +80,14 @@ class StockLocationViewSet(viewsets.ModelViewSet):
 
 
 class StockTransactionViewSet(viewsets.ModelViewSet):
+
+    permission_classes = [
+        HasModulePermission,
+    ]
+
+    permission_code = (
+        ModulePermission.Codes.INVENTORY
+    )
 
     queryset = (
         StockTransaction.objects
@@ -148,6 +167,14 @@ class StockTransactionViewSet(viewsets.ModelViewSet):
         )
 
 class StockBalanceViewSet(viewsets.ViewSet):
+
+    permission_classes = [
+        HasModulePermission,
+    ]
+
+    permission_code = (
+        ModulePermission.Codes.INVENTORY
+    )
 
     def list(self, request):
 
