@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../services/api";
 
 import {
   ArrowDownRight,
@@ -154,8 +155,8 @@ type CustomerListResponse = {
    API
 ============================================================ */
 
-const DASHBOARD_API = "/api/dashboard";
-const CUSTOMERS_API = "/api/customers";
+const DASHBOARD_API = "/dashboard";
+const CUSTOMERS_API = "/customers";
 
 /* ============================================================
    HELPERS
@@ -984,45 +985,16 @@ export default function Dashboard() {
         topProductsResponse,
         recentTransactionsResponse,
       ] = await Promise.all([
-        fetch(
-          `${DASHBOARD_API}/summary/`
-        ),
-
-        fetch(
-          `${DASHBOARD_API}/trends/?period=${period}`
-        ),
-
-        fetch(
-          `${DASHBOARD_API}/top-products/?limit=5`
-        ),
-
-        fetch(
-          `${DASHBOARD_API}/recent-transactions/?limit=10`
-        ),
+        api.get<SummaryResponse>(`${DASHBOARD_API}/summary/`),
+        api.get<TrendsResponse>(`${DASHBOARD_API}/trends/?period=${period}`),
+        api.get<TopProductsResponse>(`${DASHBOARD_API}/top-products/?limit=5`),
+        api.get<RecentTransactionsResponse>(`${DASHBOARD_API}/recent-transactions/?limit=10`),
       ]);
 
-      if (
-        !summaryResponse.ok ||
-        !trendsResponse.ok ||
-        !topProductsResponse.ok ||
-        !recentTransactionsResponse.ok
-      ) {
-        throw new Error(
-          "Unable to load dashboard data."
-        );
-      }
-
-      const [
-        summaryData,
-        trendsData,
-        topProductsData,
-        recentTransactionsData,
-      ] = await Promise.all([
-        summaryResponse.json(),
-        trendsResponse.json(),
-        topProductsResponse.json(),
-        recentTransactionsResponse.json(),
-      ]);
+      const summaryData = summaryResponse.data;
+      const trendsData = trendsResponse.data;
+      const topProductsData = topProductsResponse.data;
+      const recentTransactionsData = recentTransactionsResponse.data;
 
       setSummary(summaryData);
       setTrends(trendsData);
@@ -1064,18 +1036,12 @@ export default function Dashboard() {
       setOutstandingLoading(true);
 
       const customersResponse =
-        await fetch(
+        await api.get<CustomerListResponse>(
           `${CUSTOMERS_API}/`
         );
 
-      if (
-        !customersResponse.ok
-      ) {
-        return;
-      }
-
       const customersData =
-        (await customersResponse.json()) as CustomerListResponse;
+        customersResponse.data;
 
       const customers =
         customersData.results.filter(
@@ -1095,17 +1061,11 @@ export default function Dashboard() {
             async (customer) => {
               try {
                 const response =
-                  await fetch(
+                  await api.get<CustomerOutstanding>(
                     `${CUSTOMERS_API}/${customer.id}/outstanding/`
                   );
 
-                if (
-                  !response.ok
-                ) {
-                  return null;
-                }
-
-                return (await response.json()) as CustomerOutstanding;
+                return response.data;
               } catch {
                 return null;
               }

@@ -1,4 +1,5 @@
-import {ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
+import api from "../services/api";
 
 type PaymentType = "CUSTOMER" | "SUPPLIER";
 
@@ -78,7 +79,7 @@ interface PaymentForm {
   notes: string;
 }
 
-const API_BASE = "/api";
+const API_BASE = "";
 
 const today = new Date()
   .toISOString()
@@ -151,37 +152,14 @@ export default function Payments() {
         customersResponse,
         suppliersResponse,
       ] = await Promise.all([
-        fetch(`${API_BASE}/payments/`),
-        fetch(`${API_BASE}/customers/`),
-        fetch(`${API_BASE}/suppliers/`),
+        api.get(`${API_BASE}/payments/`),
+        api.get(`${API_BASE}/customers/`),
+        api.get(`${API_BASE}/suppliers/`),
       ]);
 
-      if (!paymentsResponse.ok) {
-        throw new Error(
-          "Failed to load payments."
-        );
-      }
-
-      if (!customersResponse.ok) {
-        throw new Error(
-          "Failed to load customers."
-        );
-      }
-
-      if (!suppliersResponse.ok) {
-        throw new Error(
-          "Failed to load suppliers."
-        );
-      }
-
-      const paymentsData =
-        await paymentsResponse.json();
-
-      const customersData =
-        await customersResponse.json();
-
-      const suppliersData =
-        await suppliersResponse.json();
+      const paymentsData = paymentsResponse.data as any;
+      const customersData = customersResponse.data as any;
+      const suppliersData = suppliersResponse.data as any;
 
       setPayments(
         paymentsData.results ??
@@ -363,27 +341,12 @@ export default function Payments() {
           form.notes.trim(),
       };
 
-      const response = await fetch(
+      const response = await api.post(
         `${API_BASE}/payments/`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify(payload),
-        }
+        payload,
       );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          extractApiError(data)
-        );
-      }
+      const data = response.data as Payment;
 
       setPayments((previous) => [
         data,
@@ -434,25 +397,11 @@ export default function Payments() {
       setError("");
       setSuccess("");
 
-      const response = await fetch(
+      const response = await api.post(
         `${API_BASE}/payments/${payment.id}/complete/`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-        }
       );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          extractApiError(data)
-        );
-      }
+      const data = response.data as Payment;
 
       setPayments((previous) =>
         previous.map((item) =>

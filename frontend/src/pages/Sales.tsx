@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import api from "../services/api";
 
 type Customer = {
   id: number;
@@ -80,51 +81,47 @@ type PaginatedResponse<T> = {
   results: T[];
 };
 
-const API_BASE = "http://127.0.0.1:8000/api";
+const API_BASE = "";
 
 async function apiRequest<T>(
   url: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const response = await fetch(`${API_BASE}${url}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-
-  const text = await response.text();
-
-  let data: any = null;
-
   try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = text;
-  }
+    const method = (options.method ?? "GET").toUpperCase();
 
-  if (!response.ok) {
+    if (method === "POST") {
+      const response = await api.post<T>(
+        `${API_BASE}${url}`,
+        options.body ? JSON.parse(options.body as string) : undefined,
+      );
+      return response.data;
+    }
+
+    const response = await api.get<T>(
+      `${API_BASE}${url}`,
+    );
+    return response.data;
+  } catch (err: any) {
+    const data = err?.response?.data;
     let message = "Request failed.";
 
     if (data?.detail) {
       message = data.detail;
-    } else if (typeof data === "object" && data) {
+    } else if (data && typeof data === "object") {
       message = Object.entries(data)
-        .map(([key, value]) => {
-          if (Array.isArray(value)) {
-            return `${key}: ${value.join(", ")}`;
-          }
-
-          return `${key}: ${String(value)}`;
-        })
+        .map(([key, value]) =>
+          Array.isArray(value)
+            ? `${key}: ${value.join(", ")}`
+            : `${key}: ${String(value)}`,
+        )
         .join("\n");
+    } else if (err instanceof Error) {
+      message = err.message;
     }
 
     throw new Error(message);
   }
-
-  return data as T;
 }
 
 function today() {
