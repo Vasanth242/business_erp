@@ -1,19 +1,6 @@
 from rest_framework.permissions import BasePermission
 
-from .models import UserProfile
-
-
-class IsAdminUser(BasePermission):
-
-    message = "Administrator access is required."
-
-    def has_permission(self, request, view):
-
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and request.user.is_superuser
-        )
+from .models import ModulePermission
 
 
 class HasModulePermission(BasePermission):
@@ -23,53 +10,159 @@ class HasModulePermission(BasePermission):
         "to access this module."
     )
 
-    def has_permission(self, request, view):
+    def has_permission(
+        self,
+        request,
+        view,
+    ):
 
         user = request.user
 
-        # Not authenticated
         if not user or not user.is_authenticated:
             return False
 
-        # Superuser has complete access
         if user.is_superuser:
             return True
 
-        # Get required module permission
         permission_code = getattr(
             view,
             "permission_code",
             None,
         )
 
-        # View must define a permission
         if not permission_code:
             return False
 
-        # Get user profile
-        try:
-            profile = user.user_profile
-        except UserProfile.DoesNotExist:
-            return False
-
-        # User must have a role
-        if not profile.role:
-            return False
-
-        # Role must be active
-        if not profile.role.is_active:
-            return False
-
-        # User must be active
-        if not user.is_active:
-            return False
-
-        # Check module permission
-        return (
-            profile.role.permissions
-            .filter(
-                code=permission_code,
-                is_active=True,
-            )
-            .exists()
+        profile = getattr(
+            user,
+            "user_profile",
+            None,
         )
+
+        if not profile:
+            return False
+
+        role = profile.role
+
+        if not role or not role.is_active:
+            return False
+
+        return role.permissions.filter(
+            code=permission_code,
+            is_active=True,
+        ).exists()
+
+
+class HasSalesDataAccess(BasePermission):
+
+    message = (
+        "You do not have permission "
+        "to access sales supporting data."
+    )
+
+    def has_permission(
+        self,
+        request,
+        view,
+    ):
+
+        user = request.user
+
+        if not user or not user.is_authenticated:
+            return False
+
+        if user.is_superuser:
+            return True
+
+        profile = getattr(
+            user,
+            "user_profile",
+            None,
+        )
+
+        if not profile:
+            return False
+
+        role = profile.role
+
+        if not role or not role.is_active:
+            return False
+
+        return role.permissions.filter(
+            code="sales_data_access",
+            is_active=True,
+        ).exists()
+
+class HasModulePermissionOrSalesAccess(BasePermission):
+
+    message = (
+        "You do not have permission "
+        "to access this resource."
+    )
+
+    def has_permission(
+        self,
+        request,
+        view,
+    ):
+
+        user = request.user
+
+        if not user or not user.is_authenticated:
+            return False
+
+        # Administrator / superuser
+        if user.is_superuser:
+            return True
+
+        profile = getattr(
+            user,
+            "user_profile",
+            None,
+        )
+
+        if not profile:
+            return False
+
+        role = profile.role
+
+        if not role or not role.is_active:
+            return False
+
+        permission_code = getattr(
+            view,
+            "permission_code",
+            None,
+        )
+
+        # Normal module permission
+        if permission_code:
+            has_module_permission = (
+                role.permissions
+                .filter(
+                    code=permission_code,
+                    is_active=True,
+                )
+                .exists()
+            )
+
+            if has_module_permission:
+                return True
+
+        # Sales users may READ supporting data
+        if request.method in [
+            "GET",
+            "HEAD",
+            "OPTIONS",
+        ]:
+
+            return (
+                role.permissions
+                .filter(
+                    code=ModulePermission.Codes.SALES,
+                    is_active=True,
+                )
+                .exists()
+            )
+
+        return False

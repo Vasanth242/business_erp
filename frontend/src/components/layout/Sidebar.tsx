@@ -16,14 +16,26 @@ import {
 
 import { NavLink } from "react-router-dom";
 
+import { useAuth } from "../../context/AuthContext";
 
 interface SidebarProps {
   open: boolean;
   onClose: () => void;
 }
 
+interface NavigationItem {
+  name: string;
+  path: string;
+  icon: React.ComponentType<{ size?: number }>;
+  permission: string;
+}
 
-const navigation = [
+interface NavigationGroup {
+  section: string;
+  items: NavigationItem[];
+}
+
+const navigation: NavigationGroup[] = [
   {
     section: "Overview",
     items: [
@@ -31,6 +43,7 @@ const navigation = [
         name: "Dashboard",
         path: "/",
         icon: LayoutDashboard,
+        permission: "dashboard",
       },
     ],
   },
@@ -42,31 +55,37 @@ const navigation = [
         name: "Sales",
         path: "/sales",
         icon: Receipt,
+        permission: "sales",
       },
       {
         name: "Customers",
         path: "/customers",
         icon: Users,
+        permission: "customers",
       },
       {
         name: "Inventory",
         path: "/inventory",
         icon: Boxes,
+        permission: "inventory",
       },
       {
         name: "Products",
         path: "/products",
         icon: Package,
+        permission: "products",
       },
       {
         name: "Purchases",
         path: "/purchases",
         icon: Truck,
+        permission: "purchases",
       },
       {
         name: "Payments",
         path: "/payments",
         icon: CircleDollarSign,
+        permission: "payments",
       },
     ],
   },
@@ -78,36 +97,63 @@ const navigation = [
         name: "Expenses",
         path: "/expenses",
         icon: ClipboardList,
+        permission: "expenses",
       },
       {
         name: "Expense Categories",
         path: "/expense-categories",
         icon: Tags,
+        permission: "expense_categories",
       },
       {
         name: "Freezers",
         path: "/freezers",
         icon: Snowflake,
+        permission: "freezers",
       },
       {
         name: "Claims",
         path: "/claims",
         icon: FileText,
+        permission: "claims",
       },
       {
         name: "Reconciliation",
         path: "/reconciliation",
         icon: BarChart3,
+        permission: "reconciliation",
       },
     ],
   },
 ];
 
-
 export default function Sidebar({
   open,
   onClose,
 }: SidebarProps) {
+
+  const { user } = useAuth();
+
+  const isAdmin = Boolean(user?.is_admin);
+
+  const permissions = Array.isArray(user?.permissions)
+    ? user.permissions
+    : [];
+
+  const filteredNavigation = navigation
+    .map((group) => ({
+      ...group,
+
+      items: group.items.filter(
+        (item) =>
+          isAdmin ||
+          permissions.includes(item.permission)
+      ),
+    }))
+    .filter(
+      (group) =>
+        group.items.length > 0
+    );
 
   return (
     <>
@@ -126,7 +172,10 @@ export default function Sidebar({
           bg-white
           transition-transform duration-200
           lg:static lg:translate-x-0
-          ${open ? "translate-x-0" : "-translate-x-full"}
+          ${open
+            ? "translate-x-0"
+            : "-translate-x-full"
+          }
         `}
       >
 
@@ -153,66 +202,72 @@ export default function Sidebar({
 
         </div>
 
-
         {/* Navigation */}
 
         <nav className="flex-1 overflow-y-auto px-3 py-5">
 
-          {navigation.map((group) => (
+          {filteredNavigation.map(
+            (group) => (
 
-            <div
-              key={group.section}
-              className="mb-7"
-            >
+              <div
+                key={group.section}
+                className="mb-7"
+              >
 
-              <div className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                {group.section}
+                <div className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  {group.section}
+                </div>
+
+                <div className="space-y-1">
+
+                  {group.items.map(
+                    (item) => {
+
+                      const Icon =
+                        item.icon;
+
+                      return (
+                        <NavLink
+                          key={item.path}
+                          to={item.path}
+                          end={
+                            item.path === "/"
+                          }
+                          onClick={onClose}
+                          className={({
+                            isActive,
+                          }) =>
+                            `
+                            flex items-center gap-3 rounded-lg
+                            px-3 py-2.5 text-sm font-medium
+                            transition
+                            ${
+                              isActive
+                                ? "bg-slate-900 text-white"
+                                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                            }
+                            `
+                          }
+                        >
+
+                          <Icon size={18} />
+
+                          <span>
+                            {item.name}
+                          </span>
+
+                        </NavLink>
+                      );
+                    }
+                  )}
+
+                </div>
+
               </div>
-
-              <div className="space-y-1">
-
-                {group.items.map((item) => {
-
-                  const Icon = item.icon;
-
-                  return (
-                    <NavLink
-                      key={item.path}
-                      to={item.path}
-                      end={item.path === "/"}
-                      onClick={onClose}
-                      className={({ isActive }) =>
-                        `
-                        flex items-center gap-3 rounded-lg
-                        px-3 py-2.5 text-sm font-medium
-                        transition
-                        ${
-                          isActive
-                            ? "bg-slate-900 text-white"
-                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                        }
-                        `
-                      }
-                    >
-                      <Icon size={18} />
-
-                      <span>
-                        {item.name}
-                      </span>
-
-                    </NavLink>
-                  );
-
-                })}
-
-              </div>
-
-            </div>
-
-          ))}
+            )
+          )}
 
         </nav>
-
 
         {/* Status */}
 

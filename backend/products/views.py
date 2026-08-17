@@ -2,7 +2,7 @@ from rest_framework import filters, status, viewsets
 from rest_framework.response import Response
 
 from authentication.models import ModulePermission
-from authentication.permissions import HasModulePermission
+from authentication.permissions import HasModulePermission, HasModulePermissionOrSalesAccess
 
 from core.models import AuditLog
 
@@ -19,6 +19,20 @@ class ProductViewSet(viewsets.ModelViewSet):
     permission_code = (
         ModulePermission.Codes.PRODUCTS
     )
+
+    def get_permissions(self):
+
+        if self.action in [
+            "list",
+            "retrieve",
+        ]:
+            return [
+                HasModulePermissionOrSalesAccess()
+            ]
+
+        return [
+            HasModulePermission()
+        ]
 
     queryset = Product.objects.all()
 

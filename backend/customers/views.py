@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from authentication.models import ModulePermission
-from authentication.permissions import HasModulePermission
+from authentication.permissions import HasModulePermission, HasModulePermissionOrSalesAccess
 
 from core.models import AuditLog
 
@@ -24,6 +24,20 @@ class RouteViewSet(viewsets.ModelViewSet):
     permission_code = (
         ModulePermission.Codes.CUSTOMERS
     )
+
+    def get_permissions(self):
+
+        if self.action in [
+            "list",
+            "retrieve",
+        ]:
+            return [
+                HasModulePermissionOrSalesAccess()
+            ]
+
+        return [
+            HasModulePermission()
+        ]
 
     queryset = (
         Route.objects
@@ -210,6 +224,20 @@ class CustomerViewSet(viewsets.ModelViewSet):
     permission_code = (
         ModulePermission.Codes.CUSTOMERS
     )
+
+    def get_permissions(self):
+
+        if self.action in [
+            "list",
+            "retrieve",
+        ]:
+            return [
+                HasModulePermissionOrSalesAccess()
+            ]
+
+        return [
+            HasModulePermission()
+        ]
 
     queryset = (
         Customer.objects

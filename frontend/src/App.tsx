@@ -30,6 +30,7 @@ import Claims from "./pages/Claims";
 import Reconciliation
   from "./pages/Reconciliation";
 
+
 function App() {
 
   return (
@@ -39,14 +40,19 @@ function App() {
 
         <Routes>
 
-          {/* Login */}
+          {/* ==========================================================
+              LOGIN
+          ========================================================== */}
 
           <Route
             path="/login"
             element={<Login />}
           />
 
-          {/* Protected application */}
+
+          {/* ==========================================================
+              PROTECTED APPLICATION
+          ========================================================== */}
 
           <Route
             element={<ProtectedRoute />}
@@ -56,71 +62,255 @@ function App() {
               element={<AppLayout />}
             >
 
-              <Route
-                path="/"
-                element={<Dashboard />}
-              />
+
+              {/* ======================================================
+                  DASHBOARD
+              ====================================================== */}
 
               <Route
-                path="/products"
-                element={<Products />}
-              />
+                element={
+                  <ProtectedRoute
+                    permission="dashboard"
+                  />
+                }
+              >
+
+                <Route
+                  path="/"
+                  element={<Dashboard />}
+                />
+
+              </Route>
+
+
+              {/* ======================================================
+                  PRODUCTS
+              ====================================================== */}
 
               <Route
-                path="/customers"
-                element={<Customers />}
-              />
+                element={
+                  <ProtectedRoute
+                    permission="products"
+                  />
+                }
+              >
+
+                <Route
+                  path="/products"
+                  element={<Products />}
+                />
+
+              </Route>
+
+
+              {/* ======================================================
+                  CUSTOMERS
+              ====================================================== */}
 
               <Route
-                path="/inventory"
-                element={<Inventory />}
-              />
+                element={
+                  <ProtectedRoute
+                    permission="customers"
+                  />
+                }
+              >
+
+                <Route
+                  path="/customers"
+                  element={<Customers />}
+                />
+
+              </Route>
+
+
+              {/* ======================================================
+                  INVENTORY
+              ====================================================== */}
 
               <Route
-                path="/sales"
-                element={<Sales />}
-              />
+                element={
+                  <ProtectedRoute
+                    permission="inventory"
+                  />
+                }
+              >
+
+                <Route
+                  path="/inventory"
+                  element={<Inventory />}
+                />
+
+              </Route>
+
+
+              {/* ======================================================
+                  SALES
+              ====================================================== */}
 
               <Route
-                path="/purchases"
-                element={<Purchases />}
-              />
+                element={
+                  <ProtectedRoute
+                    permission="sales"
+                  />
+                }
+              >
+
+                <Route
+                  path="/sales"
+                  element={<Sales />}
+                />
+
+              </Route>
+
+
+              {/* ======================================================
+                  PURCHASES
+              ====================================================== */}
 
               <Route
-                path="/payments"
-                element={<Payments />}
-              />
+                element={
+                  <ProtectedRoute
+                    permission="purchases"
+                  />
+                }
+              >
+
+                <Route
+                  path="/purchases"
+                  element={<Purchases />}
+                />
+
+              </Route>
+
+
+              {/* ======================================================
+                  PAYMENTS
+              ====================================================== */}
 
               <Route
-                path="/expenses"
-                element={<Expenses />}
-              />
+                element={
+                  <ProtectedRoute
+                    permission="payments"
+                  />
+                }
+              >
+
+                <Route
+                  path="/payments"
+                  element={<Payments />}
+                />
+
+              </Route>
+
+
+              {/* ======================================================
+                  EXPENSES
+              ====================================================== */}
 
               <Route
-                path="/expense-categories"
-                element={<ExpenseCategories />}
-              />
+                element={
+                  <ProtectedRoute
+                    permission="expenses"
+                  />
+                }
+              >
+
+                <Route
+                  path="/expenses"
+                  element={<Expenses />}
+                />
+
+              </Route>
+
+
+              {/* ======================================================
+                  EXPENSE CATEGORIES
+              ====================================================== */}
 
               <Route
-                path="/freezers"
-                element={<Freezers />}
-              />
+                element={
+                  <ProtectedRoute
+                    permission="expense_categories"
+                  />
+                }
+              >
+
+                <Route
+                  path="/expense-categories"
+                  element={<ExpenseCategories />}
+                />
+
+              </Route>
+
+
+              {/* ======================================================
+                  FREEZERS
+              ====================================================== */}
 
               <Route
-                path="/claims"
-                element={<Claims />}
-              />
+                element={
+                  <ProtectedRoute
+                    permission="freezers"
+                  />
+                }
+              >
+
+                <Route
+                  path="/freezers"
+                  element={<Freezers />}
+                />
+
+              </Route>
+
+
+              {/* ======================================================
+                  CLAIMS
+              ====================================================== */}
 
               <Route
-                path="/reconciliation"
-                element={<Reconciliation />}
-              />
+                element={
+                  <ProtectedRoute
+                    permission="claims"
+                  />
+                }
+              >
+
+                <Route
+                  path="/claims"
+                  element={<Claims />}
+                />
+
+              </Route>
+
+
+              {/* ======================================================
+                  RECONCILIATION
+              ====================================================== */}
+
+              <Route
+                element={
+                  <ProtectedRoute
+                    permission="reconciliation"
+                  />
+                }
+              >
+
+                <Route
+                  path="/reconciliation"
+                  element={<Reconciliation />}
+                />
+
+              </Route>
+
 
             </Route>
 
           </Route>
 
-          {/* Unknown URL */}
+
+          {/* ==========================================================
+              UNKNOWN URL
+          ========================================================== */}
 
           <Route
             path="*"
@@ -139,5 +329,6 @@ function App() {
     </BrowserRouter>
   );
 }
+
 
 export default App;

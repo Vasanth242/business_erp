@@ -7,7 +7,7 @@ from rest_framework import status, viewsets
 from rest_framework.response import Response
 
 from authentication.models import ModulePermission
-from authentication.permissions import HasModulePermission
+from authentication.permissions import HasModulePermission, HasModulePermissionOrSalesAccess
 
 from .models import StockLocation, StockTransaction
 from .serializers import (
@@ -26,6 +26,20 @@ class StockLocationViewSet(viewsets.ModelViewSet):
     permission_code = (
         ModulePermission.Codes.INVENTORY
     )
+
+    def get_permissions(self):
+
+        if self.action in [
+            "list",
+            "retrieve",
+        ]:
+            return [
+                HasModulePermissionOrSalesAccess()
+            ]
+
+        return [
+            HasModulePermission()
+        ]
 
     queryset = (
         StockLocation.objects
@@ -88,6 +102,20 @@ class StockTransactionViewSet(viewsets.ModelViewSet):
     permission_code = (
         ModulePermission.Codes.INVENTORY
     )
+
+    def get_permissions(self):
+
+        if self.action in [
+            "list",
+            "retrieve",
+        ]:
+            return [
+                HasModulePermissionOrSalesAccess()
+            ]
+
+        return [
+            HasModulePermission()
+        ]
 
     queryset = (
         StockTransaction.objects
@@ -169,7 +197,7 @@ class StockTransactionViewSet(viewsets.ModelViewSet):
 class StockBalanceViewSet(viewsets.ViewSet):
 
     permission_classes = [
-        HasModulePermission,
+        HasModulePermissionOrSalesAccess,
     ]
 
     permission_code = (

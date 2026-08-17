@@ -41,6 +41,12 @@ class ModulePermission(models.Model):
             "Sales",
         )
 
+        SALES_DATA_ACCESS = (
+            "sales_data_access",
+            "Sales Data Access",
+        )
+
+
         PAYMENTS = (
             "payments",
             "Payments",
