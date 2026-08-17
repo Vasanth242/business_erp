@@ -1,6 +1,8 @@
 from django.core.validators import MinValueValidator
 from django.db import models
 from decimal import Decimal
+from django.conf import settings
+from django.conf import settings
 
 from core.models import TimeStampedModel
 
@@ -61,6 +63,22 @@ class Supplier(TimeStampedModel):
         max_length=20,
         choices=Status.choices,
         default=Status.ACTIVE,
+    )
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="suppliers_created",
+    )
+
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="suppliers_updated",
     )
 
     class Meta:

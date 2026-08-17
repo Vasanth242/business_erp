@@ -37,6 +37,21 @@ def _display_name(obj, *fields):
             return str(value)
     return str(obj)
 
+def _is_admin(user):
+    return bool(
+        user
+        and user.is_authenticated
+        and user.is_superuser
+    )
+
+
+def _user_queryset(queryset, user):
+    if _is_admin(user):
+        return queryset
+
+    return queryset.filter(
+        created_by=user
+    )
 
 class DashboardSummaryView(APIView):
     """
@@ -57,8 +72,11 @@ class DashboardSummaryView(APIView):
         # --------------------------------------------------
         # SALES
         # --------------------------------------------------
-        completed_sales = Sale.objects.filter(
-            status=Sale.Status.COMPLETED
+        completed_sales = _user_queryset(
+            Sale.objects.filter(
+                status=Sale.Status.COMPLETED
+            ),
+            request.user,
         )
 
         sales_summary = completed_sales.aggregate(
@@ -72,8 +90,11 @@ class DashboardSummaryView(APIView):
         # --------------------------------------------------
         # PURCHASES
         # --------------------------------------------------
-        completed_purchases = Purchase.objects.filter(
-            status=Purchase.Status.COMPLETED
+        completed_purchases = _user_queryset(
+            Purchase.objects.filter(
+                status=Purchase.Status.COMPLETED
+            ),
+            request.user,
         )
 
         purchase_summary = completed_purchases.aggregate(
@@ -87,8 +108,11 @@ class DashboardSummaryView(APIView):
         # --------------------------------------------------
         # EXPENSES
         # --------------------------------------------------
-        completed_expenses = Expense.objects.filter(
-            status=Expense.Status.COMPLETED
+        completed_expenses = _user_queryset(
+            Expense.objects.filter(
+                status=Expense.Status.COMPLETED
+            ),
+            request.user,
         )
 
         expense_summary = completed_expenses.aggregate(
@@ -102,8 +126,11 @@ class DashboardSummaryView(APIView):
         # --------------------------------------------------
         # PAYMENTS
         # --------------------------------------------------
-        completed_payments = Payment.objects.filter(
-            status=Payment.Status.COMPLETED
+        completed_payments = _user_queryset(
+            Payment.objects.filter(
+                status=Payment.Status.COMPLETED
+            ),
+            request.user,
         )
 
         customer_receipts = _decimal(
@@ -125,27 +152,46 @@ class DashboardSummaryView(APIView):
         # --------------------------------------------------
         # MASTER COUNTS
         # --------------------------------------------------
-        active_products = Product.objects.filter(
-            status=Product.Status.ACTIVE
+        active_products = _user_queryset(
+            Product.objects.filter(
+                status=Product.Status.ACTIVE
+            ),
+            request.user,
         ).count()
 
-        active_customers = Customer.objects.filter(
-            status=Customer.Status.ACTIVE
+        active_customers = _user_queryset(
+            Customer.objects.filter(
+                status=Customer.Status.ACTIVE
+            ),
+            request.user,
         ).count()
 
-        active_suppliers = Supplier.objects.filter(
-            status=Supplier.Status.ACTIVE
+        active_suppliers = _user_queryset(
+            Supplier.objects.filter(
+                status=Supplier.Status.ACTIVE
+            ),
+            request.user,
         ).count()
 
-        active_locations = StockLocation.objects.filter(
-            status=StockLocation.Status.ACTIVE
+        active_locations = _user_queryset(
+            StockLocation.objects.filter(
+                status=StockLocation.Status.ACTIVE
+            ),
+            request.user,
         ).count()
 
         # --------------------------------------------------
         # INVENTORY
         # --------------------------------------------------
+        inventory_queryset = StockTransaction.objects.all()
+
+        if not _is_admin(request.user):
+            inventory_queryset = inventory_queryset.filter(
+                created_by=request.user
+            )
+
         inventory = (
-            StockTransaction.objects
+            inventory_queryset
             .values("product_id")
             .annotate(
                 stock_in=Sum(
@@ -266,61 +312,100 @@ class DashboardTrendsView(APIView):
         # DAILY: 7D / 30D
         # ==================================================
         if period in ("7d", "30d"):
+
+            # --------------------------------------------------
+            # SALES
+            # --------------------------------------------------
             sales_queryset = (
-                Sale.objects
-                .filter(
-                    status=Sale.Status.COMPLETED,
-                    sale_date__gte=start_date,
-                    sale_date__lte=today,
+                _user_queryset(
+                    Sale.objects.filter(
+                        status=Sale.Status.COMPLETED,
+                        sale_date__gte=start_date,
+                        sale_date__lte=today,
+                    ),
+                    request.user,
                 )
                 .values("sale_date")
-                .annotate(amount=Sum("total_amount"))
+                .annotate(
+                    amount=Sum("total_amount")
+                )
+                .order_by("sale_date")
             )
 
             sales_by_date = {
-                item["sale_date"]: _decimal(item["amount"])
+                item["sale_date"]: _decimal(
+                    item["amount"]
+                )
                 for item in sales_queryset
             }
 
+            # --------------------------------------------------
+            # PURCHASES
+            # --------------------------------------------------
             purchases_queryset = (
-                Purchase.objects
-                .filter(
-                    status=Purchase.Status.COMPLETED,
-                    purchase_date__gte=start_date,
-                    purchase_date__lte=today,
+                _user_queryset(
+                    Purchase.objects.filter(
+                        status=Purchase.Status.COMPLETED,
+                        purchase_date__gte=start_date,
+                        purchase_date__lte=today,
+                    ),
+                    request.user,
                 )
                 .values("purchase_date")
-                .annotate(amount=Sum("total_amount"))
+                .annotate(
+                    amount=Sum("total_amount")
+                )
+                .order_by("purchase_date")
             )
 
             purchases_by_date = {
-                item["purchase_date"]: _decimal(item["amount"])
+                item["purchase_date"]: _decimal(
+                    item["amount"]
+                )
                 for item in purchases_queryset
             }
 
+            # --------------------------------------------------
+            # EXPENSES
+            # --------------------------------------------------
             expenses_queryset = (
-                Expense.objects
-                .filter(
-                    status=Expense.Status.COMPLETED,
-                    expense_date__gte=start_date,
-                    expense_date__lte=today,
+                _user_queryset(
+                    Expense.objects.filter(
+                        status=Expense.Status.COMPLETED,
+                        expense_date__gte=start_date,
+                        expense_date__lte=today,
+                    ),
+                    request.user,
                 )
                 .values("expense_date")
-                .annotate(amount=Sum("amount"))
+                .annotate(
+                    amount=Sum("amount")
+                )
+                .order_by("expense_date")
             )
 
             expenses_by_date = {
-                item["expense_date"]: _decimal(item["amount"])
+                item["expense_date"]: _decimal(
+                    item["amount"]
+                )
                 for item in expenses_queryset
             }
 
+            # --------------------------------------------------
+            # CREATE COMPLETE DATE RANGE
+            # --------------------------------------------------
             dates = []
+
             current_date = start_date
 
             while current_date <= today:
                 dates.append(current_date)
+
                 current_date += timedelta(days=1)
 
+            # --------------------------------------------------
+            # SALES DATA
+            # --------------------------------------------------
             sales = [
                 {
                     "date": current_date,
@@ -332,6 +417,9 @@ class DashboardTrendsView(APIView):
                 for current_date in dates
             ]
 
+            # --------------------------------------------------
+            # PURCHASE DATA
+            # --------------------------------------------------
             purchases = [
                 {
                     "date": current_date,
@@ -343,6 +431,9 @@ class DashboardTrendsView(APIView):
                 for current_date in dates
             ]
 
+            # --------------------------------------------------
+            # EXPENSE DATA
+            # --------------------------------------------------
             expenses = [
                 {
                     "date": current_date,
@@ -368,16 +459,26 @@ class DashboardTrendsView(APIView):
         # ==================================================
         # MONTHLY: 12M
         # ==================================================
+        
+        # --------------------------------------------------
+        # SALES
+        # --------------------------------------------------
         sales_queryset = (
-            Sale.objects
-            .filter(
-                status=Sale.Status.COMPLETED,
-                sale_date__gte=start_date,
-                sale_date__lte=today,
+            _user_queryset(
+                Sale.objects.filter(
+                    status=Sale.Status.COMPLETED,
+                    sale_date__gte=start_date,
+                    sale_date__lte=today,
+                ),
+                request.user,
             )
-            .annotate(month=TruncMonth("sale_date"))
+            .annotate(
+                month=TruncMonth("sale_date")
+            )
             .values("month")
-            .annotate(amount=Sum("total_amount"))
+            .annotate(
+                amount=Sum("total_amount")
+            )
             .order_by("month")
         )
 
@@ -388,16 +489,26 @@ class DashboardTrendsView(APIView):
             for item in sales_queryset
         }
 
+
+        # --------------------------------------------------
+        # PURCHASES
+        # --------------------------------------------------
         purchases_queryset = (
-            Purchase.objects
-            .filter(
-                status=Purchase.Status.COMPLETED,
-                purchase_date__gte=start_date,
-                purchase_date__lte=today,
+            _user_queryset(
+                Purchase.objects.filter(
+                    status=Purchase.Status.COMPLETED,
+                    purchase_date__gte=start_date,
+                    purchase_date__lte=today,
+                ),
+                request.user,
             )
-            .annotate(month=TruncMonth("purchase_date"))
+            .annotate(
+                month=TruncMonth("purchase_date")
+            )
             .values("month")
-            .annotate(amount=Sum("total_amount"))
+            .annotate(
+                amount=Sum("total_amount")
+            )
             .order_by("month")
         )
 
@@ -408,16 +519,26 @@ class DashboardTrendsView(APIView):
             for item in purchases_queryset
         }
 
+
+        # --------------------------------------------------
+        # EXPENSES
+        # --------------------------------------------------
         expenses_queryset = (
-            Expense.objects
-            .filter(
-                status=Expense.Status.COMPLETED,
-                expense_date__gte=start_date,
-                expense_date__lte=today,
+            _user_queryset(
+                Expense.objects.filter(
+                    status=Expense.Status.COMPLETED,
+                    expense_date__gte=start_date,
+                    expense_date__lte=today,
+                ),
+                request.user,
             )
-            .annotate(month=TruncMonth("expense_date"))
+            .annotate(
+                month=TruncMonth("expense_date")
+            )
             .values("month")
-            .annotate(amount=Sum("amount"))
+            .annotate(
+                amount=Sum("amount")
+            )
             .order_by("month")
         )
 
@@ -524,9 +645,17 @@ class DashboardTopProductsView(APIView):
 
         sale_type = StockTransaction.TransactionType.SALE
 
+        stock_queryset = StockTransaction.objects.filter(
+            transaction_type=sale_type
+        )
+
+        if not _is_admin(request.user):
+            stock_queryset = stock_queryset.filter(
+                created_by=request.user
+            )
+
         rows = (
-            StockTransaction.objects
-            .filter(transaction_type=sale_type)
+            stock_queryset
             .values(
                 "product_id",
                 "product__name",
@@ -589,12 +718,17 @@ class DashboardRecentTransactionsView(APIView):
         # --------------------------------------------------
         # SALES
         # --------------------------------------------------
-        sales = (
-            Sale.objects
-            .filter(status=Sale.Status.COMPLETED)
-            .select_related("customer")
-            .order_by("-sale_date", "-id")[:limit]
-        )
+        sales = _user_queryset(
+            Sale.objects.filter(
+                status=Sale.Status.COMPLETED
+            ),
+            request.user,
+        ).select_related(
+            "customer"
+        ).order_by(
+            "-sale_date",
+            "-id"
+        )[:limit]
 
         for sale in sales:
             customer_name = ""
@@ -629,12 +763,17 @@ class DashboardRecentTransactionsView(APIView):
         # --------------------------------------------------
         # PURCHASES
         # --------------------------------------------------
-        purchases = (
-            Purchase.objects
-            .filter(status=Purchase.Status.COMPLETED)
-            .select_related("supplier")
-            .order_by("-purchase_date", "-id")[:limit]
-        )
+        purchases = _user_queryset(
+            Purchase.objects.filter(
+                status=Purchase.Status.COMPLETED
+            ),
+            request.user,
+        ).select_related(
+            "supplier"
+        ).order_by(
+            "-purchase_date",
+            "-id"
+        )[:limit]
 
         for purchase in purchases:
             supplier_name = ""
@@ -669,11 +808,15 @@ class DashboardRecentTransactionsView(APIView):
         # --------------------------------------------------
         # EXPENSES
         # --------------------------------------------------
-        expenses = (
-            Expense.objects
-            .filter(status=Expense.Status.COMPLETED)
-            .order_by("-expense_date", "-id")[:limit]
-        )
+        expenses = _user_queryset(
+            Expense.objects.filter(
+                status=Expense.Status.COMPLETED
+            ),
+            request.user,
+        ).order_by(
+            "-expense_date",
+            "-id"
+        )[:limit]
 
         for expense in expenses:
             description = (
@@ -696,12 +839,18 @@ class DashboardRecentTransactionsView(APIView):
         # --------------------------------------------------
         # PAYMENTS
         # --------------------------------------------------
-        payments = (
-            Payment.objects
-            .select_related("customer", "supplier")
-            .filter(status=Payment.Status.COMPLETED)
-            .order_by("-payment_date", "-id")[:limit]
-        )
+        payments = _user_queryset(
+            Payment.objects.filter(
+                status=Payment.Status.COMPLETED
+            ),
+            request.user,
+        ).select_related(
+            "customer",
+            "supplier"
+        ).order_by(
+            "-payment_date",
+            "-id"
+        )[:limit]
 
         for payment in payments:
             payment_type = payment.payment_type
