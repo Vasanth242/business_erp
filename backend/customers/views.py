@@ -230,6 +230,8 @@ class CustomerViewSet(viewsets.ModelViewSet):
         if self.action in [
             "list",
             "retrieve",
+            "outstanding",
+            "payments",
         ]:
             return [
                 HasModulePermissionOrSalesAccess()

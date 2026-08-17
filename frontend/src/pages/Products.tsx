@@ -44,6 +44,8 @@ export default function Products() {
 
   const [error, setError] = useState("");
 
+  const [success, setSuccess] = useState("");
+
   const [search, setSearch] = useState("");
 
   const [showModal, setShowModal] = useState(false);
@@ -180,6 +182,7 @@ export default function Products() {
     event.preventDefault();
 
     setError("");
+    setSuccess("");
 
     // -----------------------------
     // Basic text validation
@@ -272,16 +275,24 @@ export default function Products() {
           `/products/${editingProduct.id}/`,
           form
         );
+
+        setSuccess(
+          `Product "${form.name}" updated successfully.`
+        );
       } else {
         await api.post(
           "/products/",
           form
         );
       }
+      
+      setSuccess(
+        `Product "${form.name}" created successfully.`
+      );
 
       closeModal();
 
-      await fetchProducts(page);
+      await fetchProducts();
 
     } catch (error: any) {
       console.error(error);
@@ -349,6 +360,13 @@ export default function Products() {
           {error}
         </div>
 
+      )}
+
+      {/* Success */}
+      {success && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {success}
+        </div>
       )}
 
 
