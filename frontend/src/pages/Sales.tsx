@@ -227,6 +227,9 @@ export default function Sales() {
   }
 
   function openNewSale() {
+    setError("");
+    setSuccess("");
+
     resetForm();
     setShowForm(true);
   }

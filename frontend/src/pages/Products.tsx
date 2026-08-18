@@ -271,24 +271,24 @@ export default function Products() {
       setSaving(true);
 
       if (editingProduct) {
-        await api.put(
-          `/products/${editingProduct.id}/`,
-          form
-        );
+          await api.put(
+              `/products/${editingProduct.id}/`,
+              form
+          );
 
-        setSuccess(
-          `Product "${form.name}" updated successfully.`
-        );
+          setSuccess(
+              `Product "${form.name}" updated successfully.`
+          );
       } else {
-        await api.post(
-          "/products/",
-          form
-        );
+          await api.post(
+              "/products/",
+              form
+          );
+
+          setSuccess(
+              `Product "${form.name}" created successfully.`
+          );
       }
-      
-      setSuccess(
-        `Product "${form.name}" created successfully.`
-      );
 
       closeModal();
 
@@ -320,7 +320,6 @@ export default function Products() {
       setSaving(false);
     }
   };
-
 
   return (
     <div className="space-y-6">

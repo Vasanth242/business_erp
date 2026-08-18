@@ -152,43 +152,26 @@ class DashboardSummaryView(APIView):
         # --------------------------------------------------
         # MASTER COUNTS
         # --------------------------------------------------
-        active_products = _user_queryset(
-            Product.objects.filter(
-                status=Product.Status.ACTIVE
-            ),
-            request.user,
+        active_products = Product.objects.filter(
+            status=Product.Status.ACTIVE
         ).count()
 
-        active_customers = _user_queryset(
-            Customer.objects.filter(
-                status=Customer.Status.ACTIVE
-            ),
-            request.user,
+        active_customers = Customer.objects.filter(
+            status=Customer.Status.ACTIVE
         ).count()
 
-        active_suppliers = _user_queryset(
-            Supplier.objects.filter(
-                status=Supplier.Status.ACTIVE
-            ),
-            request.user,
+        active_suppliers = Supplier.objects.filter(
+            status=Supplier.Status.ACTIVE
         ).count()
 
-        active_locations = _user_queryset(
-            StockLocation.objects.filter(
-                status=StockLocation.Status.ACTIVE
-            ),
-            request.user,
+        active_locations = StockLocation.objects.filter(
+            status=StockLocation.Status.ACTIVE
         ).count()
 
         # --------------------------------------------------
         # INVENTORY
         # --------------------------------------------------
         inventory_queryset = StockTransaction.objects.all()
-
-        if not _is_admin(request.user):
-            inventory_queryset = inventory_queryset.filter(
-                created_by=request.user
-            )
 
         inventory = (
             inventory_queryset
@@ -228,6 +211,7 @@ class DashboardSummaryView(APIView):
             stock_out = _decimal(item["stock_out"])
 
             current_stock = stock_in - stock_out
+
             total_stock += current_stock
 
             if current_stock > ZERO:
