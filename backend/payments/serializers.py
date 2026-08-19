@@ -303,6 +303,36 @@ class PaymentAllocationCreateSerializer(
         amount = attrs["amount"]
 
         # -------------------------------------------------
+        # Ownership validation
+        # -------------------------------------------------
+
+        request = self.context.get("request")
+
+        if (
+            request
+            and request.user.is_authenticated
+            and not request.user.is_superuser
+        ):
+
+            user = request.user
+
+            if payment.created_by_id != user.id:
+                raise serializers.ValidationError(
+                    {
+                        "payment":
+                            "You can only allocate your own payments."
+                    }
+                )
+
+            if sale.created_by_id != user.id:
+                raise serializers.ValidationError(
+                    {
+                        "sale":
+                            "You can only allocate payments to your own sales."
+                    }
+                )
+
+        # -------------------------------------------------
         # Basic amount validation
         # -------------------------------------------------
 

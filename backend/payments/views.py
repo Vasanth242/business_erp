@@ -84,6 +84,14 @@ class PaymentViewSet(
 
         queryset = super().get_queryset()
 
+        user = self.request.user
+
+        # Admin / superuser can see all payments
+        if not user.is_superuser:
+            queryset = queryset.filter(
+                created_by=user
+            )
+
         payment_type = self.request.query_params.get(
             "payment_type"
         )
@@ -252,7 +260,7 @@ class PaymentViewSet(
 
         # Lock the payment row.
         payment = (
-            Payment.objects
+            self.get_queryset()
             .select_for_update()
             .get(pk=pk)
         )
