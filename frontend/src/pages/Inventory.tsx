@@ -9,10 +9,10 @@ import {
   Plus,
   Search,
   Package,
-  X,
 } from "lucide-react";
 
 import api from "../services/api";
+import Modal from "../components/common/Modal";
 
 
 type Status = "ACTIVE" | "INACTIVE";
@@ -511,6 +511,23 @@ export default function Inventory() {
     setShowLocationModal(
       true
     );
+  };
+
+  const closeLocationModal = () => {
+    if (saving) return;
+
+    setShowLocationModal(false);
+    setEditingLocation(null);
+    setLocationForm(emptyLocationForm);
+    setError("");
+  };
+
+  const closeTransactionModal = () => {
+    if (saving) return;
+
+    setShowTransactionModal(false);
+    setTransactionForm(emptyTransactionForm);
+    setError("");
   };
 
 
@@ -1198,20 +1215,13 @@ export default function Inventory() {
       {showLocationModal && (
 
         <Modal
+          open={showLocationModal}
           title={
             editingLocation
               ? "Edit Location"
               : "Add Location"
           }
-          onClose={() => {
-
-            if (saving) return;
-
-            setShowLocationModal(
-              false
-            );
-
-          }}
+          onClose={closeLocationModal}
         >
 
           <form
@@ -1328,11 +1338,7 @@ export default function Inventory() {
 
             <ModalActions
               saving={saving}
-              onCancel={() =>
-                setShowLocationModal(
-                  false
-                )
-              }
+              onCancel={closeLocationModal}
               submitText={
                 editingLocation
                   ? "Update Location"
@@ -1354,23 +1360,17 @@ export default function Inventory() {
       {showTransactionModal && (
 
         <Modal
+          open={showTransactionModal}
           title="Stock Transaction"
-          onClose={() => {
-
-            if (saving) return;
-
-            setShowTransactionModal(
-              false
-            );
-
-          }}
+          onClose={closeTransactionModal}
+          maxWidth="max-w-4xl"
         >
 
           <form
             onSubmit={saveTransaction}
-            className="space-y-5"
+            className="space-y-5 p-6"
           >
-
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <FormField
               label="Product"
               required
@@ -1481,7 +1481,7 @@ export default function Inventory() {
               </select>
 
             </FormField>
-
+          </div>
 
             <FormField
               label="Transaction Type"
@@ -1526,7 +1526,7 @@ export default function Inventory() {
 
             </FormField>
 
-
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <FormField
               label="Quantity"
               required
@@ -1581,7 +1581,7 @@ export default function Inventory() {
               />
 
             </FormField>
-
+          </div>
 
             <FormField
               label="Reference Number"
@@ -1633,11 +1633,7 @@ export default function Inventory() {
 
             <ModalActions
               saving={saving}
-              onCancel={() =>
-                setShowTransactionModal(
-                  false
-                )
-              }
+              onCancel={closeTransactionModal}
               submitText="Save Transaction"
             />
 
@@ -1746,55 +1742,6 @@ function FormField({
 
   );
 }
-
-
-function Modal({
-  title,
-  onClose,
-  children,
-}: {
-  title: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-
-  return (
-
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-xl">
-
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-
-          <h2 className="font-semibold text-slate-900">
-            {title}
-          </h2>
-
-          <button
-            onClick={onClose}
-            type="button"
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
-          >
-
-            <X size={19} />
-
-          </button>
-
-        </div>
-
-        <div className="p-6">
-
-          {children}
-
-        </div>
-
-      </div>
-
-    </div>
-
-  );
-}
-
 
 function ModalActions({
   saving,
