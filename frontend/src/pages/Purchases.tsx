@@ -1072,7 +1072,7 @@ export default function Purchases() {
                                       .value
                                   )
                                 }
-                                className="w-full min-w-[240px] rounded-lg border border-slate-300 px-3 py-2"
+                                className="w-full min-w-60 rounded-lg border border-slate-300 px-3 py-2"
                               >
 
                                 <option value="">

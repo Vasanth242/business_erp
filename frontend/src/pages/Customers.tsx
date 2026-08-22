@@ -2058,7 +2058,7 @@ export default function Customers() {
                     </div>
 
                     <div className="overflow-x-auto">
-                      <table className="w-full min-w-[850px] text-left text-sm">
+                      <table className="w-full min-w-212.5 text-left text-sm">
                         <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                           <tr>
                             <th className="px-5 py-3">Invoice</th>

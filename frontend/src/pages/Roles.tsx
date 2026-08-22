@@ -435,7 +435,7 @@ export default function Roles() {
 
           <div className="overflow-x-auto">
 
-            <table className="w-full min-w-[900px] text-left text-sm">
+            <table className="w-full min-w-225 text-left text-sm">
 
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
 
