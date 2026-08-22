@@ -5,8 +5,10 @@ import {
   ClipboardList,
   FileText,
   LayoutDashboard,
+  LockKeyhole,
   Package,
   Receipt,
+  ShieldCheck,
   Snowflake,
   Tags,
   Truck,
@@ -122,6 +124,30 @@ const navigation: NavigationGroup[] = [
         path: "/reconciliation",
         icon: BarChart3,
         permission: "reconciliation",
+      },
+    ],
+  },
+
+  {
+    section: "Administration",
+    items: [
+      {
+        name: "Users",
+        path: "/users",
+        icon: Users,
+        permission: "users",
+      },
+      {
+        name: "Roles",
+        path: "/roles",
+        icon: ShieldCheck,
+        permission: "roles",
+      },
+      {
+        name: "Password Policies",
+        path: "/password-policies",
+        icon: LockKeyhole,
+        permission: "password_policies",
       },
     ],
   },

@@ -15,6 +15,8 @@ import AppLayout
 
 import Login from "./pages/Login";
 
+import Roles from "./pages/Roles";
+
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Customers from "./pages/Customers";
@@ -300,6 +302,23 @@ function App() {
                   element={<Reconciliation />}
                 />
 
+              </Route>
+
+              {/* ======================================================
+                  ROLES
+              ====================================================== */}
+
+              <Route
+                element={
+                  <ProtectedRoute
+                    permission="roles"
+                  />
+                }
+              >
+                <Route
+                  path="/roles"
+                  element={<Roles />}
+                />
               </Route>
 
 

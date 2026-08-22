@@ -62,7 +62,10 @@ export default function ProtectedRoute({
   /*
    * Administrator has access to everything
    */
-  if (user?.is_admin) {
+  if (
+    user?.is_admin === true ||
+    user?.is_superuser === true
+  ) {
     return <Outlet />;
   }
 
