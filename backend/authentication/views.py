@@ -25,6 +25,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.hashers import check_password
 
 from core.models import AuditLog
 
@@ -154,33 +155,12 @@ def validate_password_history(
         .order_by("-changed_at")
     )
 
-    for item in history[
-        :policy.password_history
-    ]:
-
-        if user.check_password(
-            password
-        ):
-
-            raise serializers.ValidationError(
-                {
-                    "password":
-                        "You cannot reuse one "
-                        "of your recent passwords."
-                }
-            )
-
-        # Check hash directly using Django's
-        # password hasher.
-        from django.contrib.auth.hashers import (
-            check_password,
-        )
+    for item in history[:policy.password_history]:
 
         if check_password(
             password,
             item.password_hash,
         ):
-
             raise serializers.ValidationError(
                 {
                     "password":
@@ -613,15 +593,23 @@ class UserListSerializer(
     serializers.ModelSerializer
 ):
 
-    role = serializers.CharField(
+    role = serializers.PrimaryKeyRelatedField(
+        source="user_profile.role",
+        read_only=True,
+    )
+
+    role_name = serializers.CharField(
         source="user_profile.role.name",
         read_only=True,
     )
 
-    password_policy = serializers.CharField(
-        source=(
-            "user_profile.password_policy.name"
-        ),
+    password_policy = serializers.PrimaryKeyRelatedField(
+        source="user_profile.password_policy",
+        read_only=True,
+    )
+
+    password_policy_name = serializers.CharField(
+        source="user_profile.password_policy.name",
         read_only=True,
     )
 
@@ -652,7 +640,11 @@ class UserListSerializer(
 
             "role",
 
+            "role_name",
+
             "password_policy",
+
+            "password_policy_name",
 
             "is_locked",
         ]
@@ -685,6 +677,10 @@ class UserCreateSerializer(
     email = serializers.EmailField(
         required=False,
         allow_blank=True,
+    )
+
+    is_active = serializers.BooleanField(
+        default=True
     )
 
     password = serializers.CharField(
@@ -823,6 +819,10 @@ class UserUpdateSerializer(
         allow_blank=True,
     )
 
+    is_active = serializers.BooleanField(
+        required=False
+    )
+
     role = serializers.PrimaryKeyRelatedField(
         queryset=Role.objects.filter(
             is_active=True
@@ -849,6 +849,7 @@ class UserUpdateSerializer(
             "first_name",
             "last_name",
             "email",
+            "is_active",
         ]:
 
             if field in validated_data:

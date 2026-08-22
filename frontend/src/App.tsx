@@ -17,6 +17,8 @@ import Login from "./pages/Login";
 
 import Roles from "./pages/Roles";
 
+import Users from "./pages/Users";
+
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Customers from "./pages/Customers";
@@ -321,6 +323,22 @@ function App() {
                 />
               </Route>
 
+              {/* ======================================================
+                  USERS
+              ====================================================== */}
+
+              <Route
+                element={
+                  <ProtectedRoute
+                    permission="users"
+                  />
+                }
+              >
+                <Route
+                  path="/users"
+                  element={<Users />}
+                />
+              </Route>
 
             </Route>
 
