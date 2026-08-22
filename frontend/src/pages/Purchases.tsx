@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
+import Modal from "../components/common/Modal";
 
 type Supplier = {
   id: number;
@@ -235,12 +236,13 @@ export default function Purchases() {
     setShowModal(true);
   };
 
-  const closeModal = () => {
-    if (saving) {
+  const closeModal = (force = false) => {
+    if (saving && !force) {
       return;
     }
 
     setShowModal(false);
+    resetForm();
   };
 
   // =========================================================
@@ -502,9 +504,7 @@ export default function Purchases() {
         `Purchase ${response.data.invoice_number} created successfully.`
       );
 
-      setShowModal(false);
-
-      resetForm();
+      closeModal(true);
 
       await fetchPurchases();
       } catch (err: any) {
@@ -845,35 +845,13 @@ export default function Purchases() {
           CREATE PURCHASE MODAL
           ===================================================== */}
 
-      {showModal && (
-
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-
-          <div className="max-h-[95vh] w-full max-w-6xl overflow-y-auto rounded-2xl bg-white shadow-xl">
-
-            {/* MODAL HEADER */}
-
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  New Purchase
-                </h2>
-
-                <p className="text-sm text-slate-500">
-                  Create a purchase bill.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={closeModal}
-                className="text-xl text-slate-400 hover:text-slate-700"
-              >
-                ×
-              </button>
-
-            </div>
+          <Modal
+            open={showModal}
+            onClose={closeModal}
+            title="New Purchase"
+            description="Create a purchase bill."
+            maxWidth="max-w-6xl"
+          >
 
             <div className="space-y-6 p-6">
 
@@ -1367,7 +1345,7 @@ export default function Purchases() {
 
                 <button
                   type="button"
-                  onClick={closeModal}
+                  onClick={() => closeModal()}
                   disabled={saving}
                   className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                 >
@@ -1388,13 +1366,7 @@ export default function Purchases() {
               </div>
 
             </div>
-
-          </div>
-
-        </div>
-
-      )}
-
-    </div>
-  );
-}
+          </Modal>
+      </div>
+      );
+    }
