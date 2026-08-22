@@ -1,11 +1,12 @@
 import {
-  ReactNode,
+  type ReactNode,
   useEffect,
   useMemo,
   useState,
 } from "react";
 
 import api from "../services/api";
+import Modal from "../components/common/Modal";
 
 
 type PaymentMethod =
@@ -454,16 +455,14 @@ export default function Expenses() {
   // CLOSE FORM
   // =========================================================
 
-  const closeForm = () => {
-
-    if (saving) {
+  const closeForm = (force = false) => {
+    if (saving && !force) {
       return;
     }
 
     setShowForm(false);
-
     setEditingExpense(null);
-
+    setForm(initialForm);
   };
 
 
@@ -1217,45 +1216,22 @@ export default function Expenses() {
       {/* =====================================================
           CREATE / EDIT FORM
       ===================================================== */}
-
       {showForm && (
-
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-
-          <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-
-            <div>
-
-              <h2 className="text-lg font-semibold text-slate-900">
-
-                {editingExpense
-                  ? "Edit Expense"
-                  : "New Expense"}
-
-              </h2>
-
-              <p className="mt-1 text-sm text-slate-500">
-
-                {editingExpense
-                  ? "Update this draft expense."
-                  : "Create a business expense as a draft."}
-
-              </p>
-
-            </div>
-
-
-            <button
-              type="button"
-              onClick={closeForm}
-              disabled={saving}
-              className="text-xl text-slate-400 hover:text-slate-700 disabled:opacity-50"
-            >
-              ×
-            </button>
-
-          </div>
-
+        <Modal
+          open={showForm}
+          onClose={closeForm}
+          title={
+            editingExpense
+              ? "Edit Expense"
+              : "New Expense"
+          }
+          description={
+            editingExpense
+              ? "Update this draft expense."
+              : "Create a business expense as a draft."
+          }
+          maxWidth="max-w-4xl"
+        >
 
           <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
 
@@ -1511,7 +1487,7 @@ export default function Expenses() {
 
             <button
               type="button"
-              onClick={closeForm}
+              onClick={() => closeForm()}
               disabled={saving}
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             >
@@ -1538,10 +1514,8 @@ export default function Expenses() {
 
           </div>
 
-        </div>
-
+        </Modal>
       )}
-
 
       {/* =====================================================
           FILTERS
@@ -1928,42 +1902,13 @@ export default function Expenses() {
 
       {viewingExpense && (
 
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-xl">
-
-            {/* HEADER */}
-
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-
-              <div>
-
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Expense Details
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-
-                  {
-                    viewingExpense.expense_number
-                  }
-
-                </p>
-
-              </div>
-
-
-              <button
-                type="button"
-                onClick={closeViewExpense}
-                className="text-xl text-slate-400 hover:text-slate-700"
-              >
-                ×
-              </button>
-
-            </div>
-
-
+        <Modal
+          open={true}
+          onClose={closeViewExpense}
+          title="Expense Details"
+          description={viewingExpense.expense_number}
+          maxWidth="max-w-2xl"
+        >
             {/* CONTENT */}
 
             <div className="space-y-6 p-6">
@@ -2165,9 +2110,7 @@ export default function Expenses() {
 
             </div>
 
-          </div>
-
-        </div>
+        </Modal>
 
       )}
 
