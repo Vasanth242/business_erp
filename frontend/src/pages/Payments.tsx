@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import api from "../services/api";
+import Modal from "../components/common/Modal";
 
 type PaymentType = "CUSTOMER" | "SUPPLIER";
 
@@ -199,13 +200,12 @@ export default function Payments() {
     setShowForm(true);
   }
 
-  function closeForm() {
-    if (saving) {
+  function closeForm(force = false) {
+    if (saving && !force) {
       return;
     }
 
     setShowForm(false);
-
     setForm(initialForm);
   }
 
@@ -425,52 +425,6 @@ export default function Payments() {
     }
   }
 
-  function extractApiError(
-    data: unknown
-  ): string {
-    if (
-      typeof data === "object" &&
-      data !== null
-    ) {
-      const object =
-        data as Record<
-          string,
-          unknown
-        >;
-
-      if (
-        typeof object.detail ===
-        "string"
-      ) {
-        return object.detail;
-      }
-
-      const messages: string[] = [];
-
-      Object.entries(object).forEach(
-        ([field, value]) => {
-          if (Array.isArray(value)) {
-            messages.push(
-              `${field}: ${value.join(", ")}`
-            );
-          } else if (
-            typeof value === "string"
-          ) {
-            messages.push(
-              `${field}: ${value}`
-            );
-          }
-        }
-      );
-
-      if (messages.length > 0) {
-        return messages.join(" | ");
-      }
-    }
-
-    return "Request failed.";
-  }
-
   const filteredPayments =
     useMemo(() => {
       const searchValue =
@@ -667,18 +621,13 @@ export default function Payments() {
 
       {/* Create Form */}
 
-      {showForm && (
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-
-          <div className="border-b border-slate-200 px-6 py-4">
-            <h2 className="text-lg font-semibold text-slate-900">
-              New Payment
-            </h2>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Create a customer receipt or supplier payment.
-            </p>
-          </div>
+        <Modal
+          open={showForm}
+          onClose={closeForm}
+          title="New Payment"
+          description="Create a customer receipt or supplier payment."
+          maxWidth="max-w-3xl"
+        >
 
           <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
 
@@ -950,7 +899,7 @@ export default function Payments() {
 
             <button
               type="button"
-              onClick={closeForm}
+              onClick={() => closeForm()}
               disabled={saving}
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             >
@@ -969,8 +918,7 @@ export default function Payments() {
             </button>
 
           </div>
-        </div>
-      )}
+        </Modal>
 
       {/* Filters */}
 
