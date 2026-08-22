@@ -349,6 +349,20 @@ class PaymentAllocationViewSet(
         ModulePermission.Codes.PAYMENTS
     )
 
+    def get_queryset(self):
+
+        queryset = super().get_queryset()
+
+        user = self.request.user
+
+        # Admin / superuser can see all allocations
+        if not user.is_superuser:
+            queryset = queryset.filter(
+                created_by=user
+            )
+
+        return queryset
+
     queryset = (
         PaymentAllocation.objects
         .select_related(

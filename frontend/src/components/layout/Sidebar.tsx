@@ -132,13 +132,9 @@ export default function Sidebar({
   onClose,
 }: SidebarProps) {
 
-  const { user } = useAuth();
-
-  const isAdmin = Boolean(user?.is_admin);
-
-  const permissions = Array.isArray(user?.permissions)
-    ? user.permissions
-    : [];
+  const {
+    hasPermission,
+  } = useAuth();
 
   const filteredNavigation = navigation
     .map((group) => ({
@@ -146,8 +142,7 @@ export default function Sidebar({
 
       items: group.items.filter(
         (item) =>
-          isAdmin ||
-          permissions.includes(item.permission)
+          hasPermission(item.permission)
       ),
     }))
     .filter(
