@@ -1,0 +1,402 @@
+Absolutely. Since this will be **shared directly with the customer**, I would make it less like an internal presentation script and more like a **clear business-oriented project walkthrough**. The customer should understand not only what each screen does, but also how the different modules work together.
+
+# Business Management System – Customer Walkthrough
+
+## 1. Dashboard – Overall Business View
+
+The **Dashboard** is the main overview of the business. It gives management a quick picture of what is happening across the system without having to open each individual module.
+
+The dashboard provides information such as:
+
+* **Total Sales**
+* **Total Purchases**
+* **Total Expenses**
+* **Current Inventory**
+* **Customer Outstanding**
+* **Business Trends**
+* **Recent Transactions**
+
+An important point is that these dashboard figures are **not manually entered**.
+
+They are automatically derived from the transactions recorded in the respective sections of the system.
+
+For example:
+
+* Purchases recorded in the Purchase module contribute to purchase totals.
+* Completed sales contribute to sales totals.
+* Completed expenses contribute to expense totals.
+* Purchase and sales transactions affect inventory.
+* Customer payments affect outstanding balances.
+
+This means the dashboard represents the actual business activity recorded in the system.
+
+### Business Trends
+
+The dashboard also allows users to change the reporting period.
+
+The current system supports:
+
+* Last 7 days
+* Last 30 days
+* Last 12 months
+
+When the period is changed, the dashboard reloads the corresponding business information for that period.
+
+### Customer Outstanding
+
+The dashboard also provides visibility into the amount currently pending from customers.
+
+This allows management to quickly understand how much money is still receivable without having to check every customer or invoice individually.
+
+---
+
+# 2. Master Data
+
+Before recording daily business transactions, the system maintains the basic information required to operate the business.
+
+This information acts as the foundation for the other modules.
+
+## Products
+
+The **Products** section is used to maintain all products that the business deals with.
+
+Product information can then be selected when recording purchases and sales.
+
+## Customers
+
+The **Customers** section is used to maintain customer information.
+
+Customers are then associated with sales transactions, invoices, payments and outstanding balances.
+
+## Suppliers
+
+The **Suppliers** section is used to maintain supplier information.
+
+Suppliers are associated with purchase transactions and supplier payments.
+
+## Locations
+
+The **Locations** section is used to maintain the different locations where stock is stored.
+
+This allows inventory to be associated with the appropriate stock location.
+
+### Why Master Data Is Important
+
+Products, customers, suppliers and locations are the **basic building blocks of the system**.
+
+Once this information is maintained, users can reuse it while recording purchases, sales, payments and other business transactions instead of entering the same information repeatedly.
+
+---
+
+# 3. Purchase Management
+
+Let's consider a real business example.
+
+Suppose the business receives **100 units of a product from a supplier**.
+
+The user can create a purchase by selecting:
+
+* Supplier
+* Invoice details
+* Stock location
+* Product
+* Quantity
+
+The purchase is then saved in the system.
+
+However, saving the purchase is different from completing the business transaction.
+
+The important business action happens when the purchase is **completed**.
+
+Once the purchase is completed, the system automatically updates the stock.
+
+The user does **not** need to separately open Inventory and manually add the purchased quantity.
+
+This is one of the key integrations within the system.
+
+---
+
+# 4. Inventory Integration
+
+Immediately after completing the purchase, the Inventory module reflects the change.
+
+For example:
+
+**Before Purchase**
+
+Stock = 500 units
+
+**Purchase Completed**
+
++100 units
+
+**After Purchase**
+
+Stock = 600 units
+
+This demonstrates that inventory is not maintained as a completely separate manual process.
+
+Instead, inventory reflects the actual business transactions recorded in the system.
+
+In other words:
+
+**Purchase completed → Stock automatically increases**
+
+---
+
+# 5. Sales Management
+
+Now consider the opposite business activity.
+
+Suppose the business sells **20 units** of the same product to a customer.
+
+The user selects:
+
+* Customer
+* Product
+* Quantity
+
+and completes the sale.
+
+Once the sale is completed, the system automatically reduces the available stock.
+
+Using the previous example:
+
+**Available Stock**
+
+600 units
+
+**Sale**
+
+-20 units
+
+**Remaining Stock**
+
+580 units
+
+This demonstrates the connection between **Sales and Inventory**.
+
+The user does not need to manually reduce inventory after completing the sale.
+
+The transaction itself drives the inventory change.
+
+---
+
+# 6. Customer Invoice and Outstanding
+
+The sale also creates the customer's transaction/invoice.
+
+This allows the business to track whether the customer has:
+
+* Fully paid
+* Partially paid
+* Not paid yet
+
+The system can therefore maintain the customer's outstanding amount based on the payments recorded against the invoice.
+
+This is particularly useful for businesses that sell goods on credit or allow customers to make payments after the sale.
+
+---
+
+# 7. Customer Payments
+
+Now suppose the customer makes a payment of **₹30,000**.
+
+The user records the payment against the customer and completes the payment transaction.
+
+The payment can then be allocated against the relevant customer invoice.
+
+For example:
+
+| Transaction      |  Amount |
+| ---------------- | ------: |
+| Invoice          | ₹50,000 |
+| Customer Payment | ₹30,000 |
+| Outstanding      | ₹20,000 |
+
+The system identifies that the invoice is **partially paid** and that **₹20,000 remains outstanding**.
+
+The invoice status is automatically determined based on the completed payment allocations:
+
+* **UNPAID**
+* **PARTIALLY_PAID**
+* **PAID**
+
+The user therefore does not have to manually maintain the invoice payment status.
+
+---
+
+# 8. Completing the Customer Payment
+
+Suppose the customer later pays the remaining **₹20,000**.
+
+The payment is recorded and allocated against the invoice.
+
+The result becomes:
+
+| Transaction |  Amount |
+| ----------- | ------: |
+| Invoice     | ₹50,000 |
+| Total Paid  | ₹50,000 |
+| Outstanding |      ₹0 |
+| Status      |    Paid |
+
+The system automatically recognizes that the invoice has now been fully paid.
+
+This means the business does not need to maintain a separate manual record of which invoices are partially paid or fully paid.
+
+The payment transactions determine the invoice status.
+
+The customer's outstanding balance is also updated accordingly and reflected in the relevant dashboard information.
+
+---
+
+# 9. Supplier Payments
+
+The system also handles the other side of the business: **payments to suppliers**.
+
+The basic flow is:
+
+**Supplier → Purchase → Amount Payable → Supplier Payment**
+
+This allows the business to record purchases from suppliers and subsequently track the payments made to those suppliers.
+
+The same transaction-based approach is used here: business information is recorded once and the relevant areas of the system are updated based on those transactions.
+
+---
+
+# 10. Expense Management
+
+Apart from purchasing goods, a business also has regular operating expenses.
+
+These can be recorded separately in the **Expenses** section.
+
+Typical examples include:
+
+* Transport
+* Rent
+* Maintenance
+* Utilities
+* Other business expenses
+
+Once an expense is completed, it contributes to the overall expense information shown in the dashboard.
+
+Therefore:
+
+**Expense completed → Expense totals increase → Dashboard reflects the change**
+
+---
+
+# 11. Returning to the Dashboard
+
+After demonstrating purchases, sales, inventory, payments and expenses, we can return to the Dashboard.
+
+At this point, the dashboard provides a consolidated view of the business activity.
+
+Management can see information such as:
+
+* Sales
+* Purchases
+* Expenses
+* Inventory
+* Customer Payments
+* Customer Outstanding
+* Recent Transactions
+* Business Trends
+
+The purpose of the dashboard is to ensure that management does not have to open every individual module to understand what is happening in the business.
+
+It provides a consolidated view based on the transactions entered throughout the system.
+
+---
+
+# 12. How the Modules Work Together
+
+The overall business flow can be understood as follows:
+
+```text
+                    BUSINESS MASTER DATA
+                           │
+             ┌─────────────┼─────────────┐
+             ↓             ↓             ↓
+         Products      Customers     Suppliers
+             │             │             │
+             │             │             │
+             └───────┬─────┴─────┬───────┘
+                     │           │
+                     ↓           ↓
+                 PURCHASE       SALES
+                     │           │
+                     ↓           ↓
+                  STOCK IN    STOCK OUT
+                     │           │
+                     └─────┬─────┘
+                           ↓
+                       INVENTORY
+                           │
+              ┌────────────┴────────────┐
+              ↓                         ↓
+      CUSTOMER PAYMENT          SUPPLIER PAYMENT
+              │
+              ↓
+      PAYMENT ALLOCATION
+              │
+              ↓
+     CUSTOMER OUTSTANDING
+              │
+              ↓
+          DASHBOARD
+              │
+       ┌──────┼──────┐
+       ↓      ↓      ↓
+      KPIs  Trends  Recent Activity
+```
+
+This illustrates that the different modules are not isolated screens. They are connected through the underlying business transactions.
+
+---
+
+# 13. The Core Business Concept
+
+The main objective of the system is:
+
+> **The user should enter the business information once, and the system should automatically reflect the impact in the relevant areas.**
+
+For example:
+
+**Purchase entered and completed → Stock increases**
+
+**Sale completed → Stock decreases**
+
+**Payment recorded → Customer outstanding decreases**
+
+**Expense completed → Expense totals increase**
+
+**All relevant transactions → Dashboard information updates**
+
+This transaction-driven approach reduces duplicate data entry and provides a more accurate view of the current business position.
+
+---
+
+# 14. Overall Business Value
+
+The system brings the major business activities together into one connected workflow.
+
+Instead of maintaining separate records for purchases, sales, inventory, customer payments, supplier payments and expenses, the system allows these activities to work together.
+
+The result is a more connected business process where:
+
+* Master data provides the foundation.
+* Purchases increase inventory.
+* Sales reduce inventory.
+* Customer invoices track amounts receivable.
+* Customer payments reduce outstanding balances.
+* Supplier payments track amounts payable.
+* Expenses contribute to business expenses.
+* The dashboard consolidates the resulting business information.
+
+The key benefit is **integration**.
+
+The user records the business transaction, and the system automatically reflects its impact across the relevant modules.
+
+This makes the system easier to operate, reduces manual reconciliation, and gives management a clearer picture of the business.
