@@ -4,10 +4,10 @@ import {
   Package,
   Plus,
   Search,
-  X,
 } from "lucide-react";
 
 import api from "../services/api";
+import Modal from "../components/common/Modal";
 import type {
   Product,
   ProductFormData,
@@ -579,38 +579,17 @@ export default function Products() {
 
       {/* Modal */}
 
-      {showModal && (
-
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-
-          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-xl">
-
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-
-              <div>
-
-                <h2 className="text-lg font-semibold text-slate-900">
-                  {editingProduct
-                    ? "Edit Product"
-                    : "Add Product"}
-                </h2>
-
-                <p className="mt-1 text-xs text-slate-500">
-                  Enter product master and pricing information
-                </p>
-
-              </div>
-
-              <button
-                onClick={closeModal}
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
-              >
-                <X size={20} />
-              </button>
-
-            </div>
-
-
+      <Modal
+        open={showModal}
+        onClose={closeModal}
+        title={
+          editingProduct
+            ? "Edit Product"
+            : "Add Product"
+        }
+        description="Enter product master and pricing information"
+        maxWidth="max-w-3xl"
+      >
             <form
               onSubmit={saveProduct}
               className="space-y-6 p-6"
@@ -649,18 +628,6 @@ export default function Products() {
                     value={form.grade}
                     onChange={(value) =>
                       updateField("grade", value)
-                    }
-                  />
-
-                  <FormInput
-                    label="Pieces / Box"
-                    type="number"
-                    value={form.pieces_per_box}
-                    onChange={(value) =>
-                      updateField(
-                        "pieces_per_box",
-                        Number(value)
-                      )
                     }
                   />
 
@@ -893,11 +860,7 @@ export default function Products() {
 
             </form>
 
-          </div>
-
-        </div>
-
-      )}
+      </Modal>
 
     </div>
   );
