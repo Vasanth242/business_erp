@@ -4,10 +4,11 @@ import {
   Plus,
   Search,
   ShieldCheck,
-  X,
 } from "lucide-react";
 
 import api from "../services/api";
+
+import Modal from "../components/common/Modal";
 
 interface Permission {
   id: number;
@@ -588,42 +589,17 @@ export default function Roles() {
 
       {/* Modal */}
 
-      {showModal && (
-
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-
-          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-xl">
-
-            {/* Modal header */}
-
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-
-              <div>
-
-                <h2 className="text-lg font-semibold text-slate-900">
-
-                  {editingRole
-                    ? "Edit Role"
-                    : "Add Role"}
-
-                </h2>
-
-                <p className="mt-1 text-xs text-slate-500">
-                  Configure role permissions
-                </p>
-
-              </div>
-
-              <button
-                onClick={closeModal}
-                disabled={saving}
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
-              >
-                <X size={20} />
-              </button>
-
-            </div>
-
+        <Modal
+            open={showModal}
+            onClose={closeModal}
+            title={
+                editingRole
+                ? "Edit Role"
+                : "Add Role"
+            }
+            description="Configure role permissions"
+            maxWidth="max-w-3xl"
+        >
 
             <form
               onSubmit={saveRole}
@@ -829,12 +805,8 @@ export default function Roles() {
 
             </form>
 
-          </div>
 
-        </div>
-
-      )}
-
+        </Modal>
     </div>
-  );
+    );
 }
