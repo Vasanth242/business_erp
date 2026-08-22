@@ -1,4 +1,8 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+  type FormEvent,
+} from "react";
 import {
   Edit,
   Package,
@@ -177,7 +181,7 @@ export default function Products() {
 
 
   const saveProduct = async (
-    event: React.FormEvent
+    event: FormEvent
   ) => {
     event.preventDefault();
 
