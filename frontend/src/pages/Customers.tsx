@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import {
   CreditCard,
   Edit,
@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 
 import api from "../services/api";
+
+import Modal from "../components/common/Modal";
 
 
 // ============================================================
@@ -558,7 +560,7 @@ export default function Customers() {
   // ==========================================================
 
   const saveCustomer = async (
-    event: React.FormEvent
+    event: FormEvent
   ) => {
 
     event.preventDefault();
@@ -811,7 +813,7 @@ export default function Customers() {
   // ==========================================================
 
   const saveRoute = async (
-    event: React.FormEvent
+    event: FormEvent
   ) => {
 
     event.preventDefault();
@@ -1531,41 +1533,17 @@ export default function Customers() {
           CUSTOMER MODAL
       ====================================================== */}
 
-      {showCustomerModal && (
-
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-
-          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-xl">
-
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-
-              <div>
-
-                <h2 className="font-semibold text-slate-900">
-                  {editingCustomer
-                    ? "Edit Customer"
-                    : "Add Customer"}
-                </h2>
-
-                <p className="mt-1 text-xs text-slate-400">
-                  Customer master information
-                </p>
-
-              </div>
-
-
-              <button
-                onClick={
-                  closeCustomerModal
-                }
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
-              >
-
-                <X size={19} />
-
-              </button>
-
-            </div>
+      <Modal
+        open={showCustomerModal}
+        onClose={closeCustomerModal}
+        title={
+          editingCustomer
+            ? "Edit Customer"
+            : "Add Customer"
+        }
+        description="Customer master information"
+        maxWidth="max-w-3xl"
+      >
 
 
             <form
@@ -1997,21 +1975,17 @@ export default function Customers() {
               </div>
 
             </form>
-
-          </div>
-
-        </div>
-
-      )}
-
+      </Modal>
 
       {/* =====================================================
           CUSTOMER OUTSTANDING MODAL
       ====================================================== */}
 
-      {showOutstandingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <Modal
+        open={showOutstandingModal}
+        onClose={closeCustomerOutstanding}
+        maxWidth="max-w-6xl"
+      >
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
               <div>
                 <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
@@ -2143,49 +2117,23 @@ export default function Customers() {
                 Close
               </button>
             </div>
-          </div>
-        </div>
-      )}
+        </Modal>
 
       {/* =====================================================
           ROUTE MODAL
       ====================================================== */}
 
-      {showRouteModal && (
-
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-
-          <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl">
-
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-
-              <div>
-
-                <h2 className="font-semibold text-slate-900">
-                  {editingRoute
-                    ? "Edit Route"
-                    : "Add Route"}
-                </h2>
-
-                <p className="mt-1 text-xs text-slate-400">
-                  Route master information
-                </p>
-
-              </div>
-
-
-              <button
-                onClick={
-                  closeRouteModal
-                }
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
-              >
-
-                <X size={19} />
-
-              </button>
-
-            </div>
+        <Modal
+          open={showRouteModal}
+          onClose={closeRouteModal}
+          title={
+            editingRoute
+              ? "Edit Route"
+              : "Add Route"
+          }
+          description="Route master information"
+          maxWidth="max-w-3xl"
+        >
 
 
             <form
@@ -2328,13 +2276,9 @@ export default function Customers() {
 
             </form>
 
-          </div>
+        </Modal>
 
-        </div>
-
-      )}
-
-    </div>
+      </div>
   );
 }
 
@@ -2444,7 +2388,7 @@ function FormField({
 }: {
   label: string;
   required?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
 
   return (
